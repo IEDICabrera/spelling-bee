@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Spelling Bee World Cup 2026</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0a1f44">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Teko:wght@400;600;700&family=Rubik:wght@400;500;700;800&display=swap');
+
+    :root{
+      --pasto-1:#1f6b2c;
+      --pasto-2:#276e33;
+      --navy:#0a1f44;
+      --gold:#FFD700;
+      --gold-deep:#C9A400;
+      --gol-color:#3fae4d;
+      --fallo-color:#d64541;
+    }
+    * { font-family: 'Rubik', Arial, sans-serif; box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+
+    body {
+      background: radial-gradient(circle at 50% -10%, #16321a 0%, #0a1a0d 65%, #060f08 100%);
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 12px;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* ===== Tarjeta única de juego (mobile-first, sin scroll) ===== */
+    .tarjeta-juego{
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 430px;
+      background: rgba(255,255,255,0.98);
+      border-radius: 22px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.65);
+      border: 4px solid var(--navy);
+      overflow: hidden;
+    }
+
+    /* Botón de control del profesor: esquina opuesta a la imagen, no se encima */
+    .btn-control{
+      position: absolute;
+      top: 10px; left: 10px;
+      z-index: 20;
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: rgba(10,31,68,0.85);
+      backdrop-filter: blur(4px);
+      color: var(--gold);
+      border: 2px solid var(--gold);
+      font-size: 1.05rem;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer;
+    }
+    .btn-control:hover{ background: var(--navy); }
+
+    /* Franja con el nombre del estudiante, visible en la tarjeta principal */
+    .barra-estudiante{
+      display:flex; align-items:center; justify-content:center; gap:6px;
+      background: #0d2a12;
+      color: #cbd5e1;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 7px 10px 7px 54px;
+      text-align:center;
+      cursor: pointer;
+    }
+    .barra-estudiante:hover{ background:#123a17; }
+    .barra-estudiante .nombre{ color: var(--gold); font-weight:800; }
+    .barra-estudiante .lapiz{ font-size:0.75rem; opacity:0.6; }
+
+    /* ===== Zona única: arco + HUD superpuesto ===== */
+    .zona-penal {
+      position: relative;
+      height: 220px;
+      overflow: hidden;
+      background: repeating-linear-gradient(90deg, var(--pasto-1) 0px, var(--pasto-1) 34px, var(--pasto-2) 34px, var(--pasto-2) 68px);
+    }
+    .arco-penal {
+      position: absolute;
+      top: 22%;
+      left: 30%;
+      width: 40%;
+      height: 42%;
+      border: 5px solid rgba(255,255,255,0.85);
+      border-bottom: none;
+      background: rgba(255,255,255,0.05);
+      border-radius: 4px 4px 0 0;
+      z-index: 3;
+      opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+    .punto-penal-marca{
+      position:absolute; top:88%; left:50%;
+      transform:translate(-50%,-50%);
+      width:7px; height:7px; border-radius:50%;
+      background:#f4f4ec;
+      z-index: 3;
+      opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+    /* El arco y la marca solo se muestran durante el disparo,
+       cuando la imagen se desvanece (clase .modo-tiro en .zona-penal) */
+    .zona-penal.modo-tiro .arco-penal,
+    .zona-penal.modo-tiro .punto-penal-marca{ opacity: 1; }
+    .balon-animado{
+      position:absolute;
+      top:88%; left:50%;
+      width:26px; height:26px;
+      margin-left:-13px; margin-top:-13px;
+      border-radius:50%;
+      background: radial-gradient(circle at 30% 30%, #ffffff, #f2e8d5 60%);
+      box-shadow: inset -3px -3px 6px rgba(0,0,0,0.3), 0 3px 6px rgba(0,0,0,0.4);
+      transition: top 0.7s cubic-bezier(.2,.9,.3,1.1),
+                  left 0.7s cubic-bezier(.2,.9,.3,1.1),
+                  transform 0.7s cubic-bezier(.2,.9,.3,1.1),
+                  opacity 0.35s ease;
+      transform: scale(1) rotate(0deg);
+      opacity: 0;
+      z-index: 3;
+    }
+    .zona-penal.modo-tiro .balon-animado{ opacity: 1; }
+    .balon-animado::before{
+      content:'';
+      position:absolute; inset:0; border-radius:50%;
+      background:
+        radial-gradient(circle at 50% 50%, transparent 30%, #2b2b2b 31%, transparent 33%),
+        radial-gradient(circle at 20% 60%, transparent 30%, #2b2b2b 31%, transparent 33%),
+        radial-gradient(circle at 80% 60%, transparent 30%, #2b2b2b 31%, transparent 33%);
+      opacity:0.35;
+    }
+    .balon-animado.gol{ transform: scale(0.45) rotate(300deg); }
+    .balon-animado.fallo{ transform: scale(0.65) rotate(220deg); }
+
+    /* Imagen protagonista: cubre buena parte de la ventana del arco,
+       detrás del HUD y del balón. Se atenúa justo cuando se patea. */
+    .imagen-ventana{
+      position:absolute;
+      top:0; left:0; right:0; bottom:0;
+      width:100%; height:100%;
+      object-fit: cover;
+      opacity: 0.9;
+      transition: opacity 0.35s ease;
+      z-index: 1;
+    }
+    .imagen-ventana.oculta{ opacity: 0; }
+    .zona-penal::after{
+      /* leve viñeta oscura para que el HUD y el arco se lean sobre cualquier imagen */
+      content:'';
+      position:absolute; inset:0;
+      background: linear-gradient(180deg, rgba(10,20,10,0.55) 0%, rgba(10,20,10,0.05) 35%, rgba(10,20,10,0.15) 100%);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* HUD: barra translúcida superpuesta sobre la imagen */
+    .hud{
+      position:absolute; top:0; left:0; right:0;
+      z-index: 5;
+      display:flex; align-items:center; justify-content:flex-end;
+      padding: 8px 12px;
+      color: #fff;
+      font-family: 'Teko', sans-serif;
+    }
+    .hud-texto{ display:flex; flex-direction:column; line-height:1; align-items:flex-end; }
+    .hud-texto .num-palabra{ font-size: 1.1rem; color:#e2e8f0; letter-spacing:1px; text-shadow:0 2px 4px rgba(0,0,0,0.8); }
+    .hud-texto .score{ font-size: 1.6rem; color: var(--gold); font-weight:700; text-shadow:0 2px 4px rgba(0,0,0,0.8); }
+
+    .mensaje-penal{
+      position:absolute; top:44%; left:0; right:0;
+      text-align:center;
+      font-weight:800; font-size:1.5rem; letter-spacing:2px;
+      opacity:0;
+      transition:opacity 0.3s ease 0.35s;
+      text-shadow:0 2px 6px rgba(0,0,0,0.7);
+      z-index:4;
+    }
+    .mensaje-penal.gol{ color: var(--gol-color); opacity:1; }
+    .mensaje-penal.fallo{ color: var(--fallo-color); opacity:1; }
+
+    /* ===== Panel de escritura (grande, para uso del docente) ===== */
+    .panel-escritura{
+      padding: 16px 16px 14px;
+    }
+    .input-cancha {
+      padding: 16px 14px;
+      font-size: 30px;
+      border: 3px solid var(--navy);
+      border-radius: 12px;
+      text-align: center;
+      width: 100%;
+      outline: none;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .input-cancha:focus {
+      border-color: var(--gol-color);
+      box-shadow: 0 0 15px rgba(63, 174, 77, 0.4);
+    }
+    .input-cancha:disabled{ opacity: 0.6; }
+
+    .btn-gol {
+      margin-top: 10px;
+      background-color: var(--gold);
+      color: var(--navy);
+      border: none;
+      padding: 15px;
+      font-size: 20px;
+      border-radius: 12px;
+      cursor: pointer;
+      width: 100%;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: 0 6px 0 var(--gold-deep);
+      transition: all 0.1s;
+    }
+    .btn-gol:active:not(:disabled) { transform: translateY(6px); box-shadow: none; }
+    .btn-gol:disabled{ opacity:0.5; cursor:not-allowed; }
+
+    .btn-reintentar{
+      display:none;
+      width: 100%;
+      margin-top: 8px;
+      padding: 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 15px;
+      background: transparent;
+      border: 2px solid var(--fallo-color);
+      color: #b23127;
+      cursor: pointer;
+    }
+    .btn-reintentar.mostrar{ display:block; }
+    .btn-reintentar:hover{ background: var(--fallo-color); color:#fff; }
+
+    /* Fila compacta de botones de audio */
+    .fila-audio{
+      display:flex;
+      gap: 8px;
+      padding: 0 16px 16px;
+    }
+    .btn-audio{
+      flex:1;
+      background:#f3f4f6;
+      border: 2px solid #e5e7eb;
+      color:#1f2937;
+      padding: 10px 4px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor:pointer;
+      display:flex; flex-direction:column; align-items:center; gap:2px;
+      transition: background 0.15s ease;
+    }
+    .btn-audio:hover{ background:#e5e7eb; }
+    .btn-audio .icono{ font-size: 1.3rem; }
+
+    /* ===== Modales ===== */
+    .overlay-modal{
+      position: fixed; inset: 0;
+      background: rgba(10, 15, 25, 0.65);
+      backdrop-filter: blur(3px);
+      display:flex; justify-content:center; align-items:center;
+      z-index: 100;
+      padding: 14px;
+    }
+    .caja-modal{
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      width: 100%;
+      max-height: 88vh;
+      display:flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .caja-modal.chica{ max-width: 420px; text-align:center; padding: 26px; }
+    .caja-modal.mediana{ max-width: 420px; }
+    .caja-modal.grande{ max-width: 480px; }
+
+    .modal-cabecera{
+      padding: 16px 20px;
+      background: var(--navy);
+      color: #fff;
+      display:flex;
+      justify-content: space-between;
+      align-items:center;
+      flex-shrink:0;
+    }
+    .modal-cabecera h3{ font-size:1.15rem; font-weight:800; margin:0; }
+    .modal-cerrar{
+      background:none; border:none; color:#fff; font-size:1.4rem;
+      cursor:pointer; line-height:1; opacity:0.8;
+    }
+    .modal-cerrar:hover{ opacity:1; }
+    .modal-cuerpo{ overflow-y:auto; padding: 18px 20px; }
+
+    /* Tiles de acción principales dentro del panel de control */
+    .tiles-accion{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .tile-accion{
+      background: linear-gradient(160deg, rgba(10,31,68,0.06), rgba(10,31,68,0.02));
+      border: 2px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 18px 10px;
+      text-align:center;
+      cursor:pointer;
+      transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+    }
+    .tile-accion:hover{ border-color: var(--navy); transform: translateY(-2px); }
+    .tile-accion .emoji{ font-size: 2.1rem; display:block; margin-bottom: 6px; }
+    .tile-accion .titulo{ font-weight:800; color:var(--navy); font-size: 0.95rem; }
+    .tile-accion .sub{ font-size: 0.75rem; color:#6b7280; margin-top:2px; }
+    .tile-accion.sorteando{ animation: pulso-sorteo 0.15s ease-in-out 3; }
+    @keyframes pulso-sorteo{
+      0%, 100% { background: linear-gradient(160deg, rgba(10,31,68,0.06), rgba(10,31,68,0.02)); }
+      50% { background: linear-gradient(160deg, rgba(255,215,0,0.35), rgba(255,215,0,0.15)); }
+    }
+    /* Efecto tipo "carrete" en el número de palabra al randomizar */
+    .num-palabra.girando{ animation: girar-numero 0.35s ease-in-out; }
+    @keyframes girar-numero{
+      0% { transform: translateY(0); opacity:1; }
+      40% { transform: translateY(-6px); opacity:0.3; }
+      41% { transform: translateY(6px); }
+      100% { transform: translateY(0); opacity:1; }
+    }
+
+    .separador-seccion{
+      font-size:0.75rem; text-transform:uppercase; letter-spacing:1px;
+      color:#9ca3af; font-weight:700;
+      margin: 18px 0 10px;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 14px;
+    }
+    .separador-seccion:first-child{ border-top:none; padding-top:0; margin-top:0; }
+
+    /* Buscador dentro del modal de selección de palabra */
+    .modal-busqueda input{
+      width:100%; padding:10px 14px;
+      border:2px solid #d1d5db; border-radius:8px;
+      font-size:15px; outline:none;
+      margin-bottom: 14px;
+    }
+    .modal-busqueda input:focus{ border-color: var(--navy); }
+
+    /* Grid de tiles glassmorphism para elegir palabra */
+    .grid-palabras{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .tile-palabra{
+      background: rgba(10,31,68,0.05);
+      backdrop-filter: blur(2px);
+      border: 1px solid rgba(10,31,68,0.12);
+      border-radius: 10px;
+      padding: 10px 8px;
+      text-align:left;
+      cursor:pointer;
+      font-weight:600;
+      font-size: 0.85rem;
+      color:#1f2937;
+      transition: background 0.12s ease, border-color 0.12s ease;
+    }
+    .tile-palabra:hover{ background: rgba(10,31,68,0.12); border-color: var(--navy); }
+    .tile-palabra.activo{ background: var(--navy); border-color: var(--navy); color:#fff; }
+    .tile-palabra .num{ display:block; font-size:0.68rem; color:#9ca3af; font-weight:500; }
+    .tile-palabra.activo .num{ color:#c7d2fe; }
+
+    .acordeon-titulo{
+      width:100%;
+      text-align:left;
+      background: #f3f4f6;
+      border:none;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-weight:700;
+      font-size:0.85rem;
+      color: var(--navy);
+      cursor:pointer;
+      display:flex; justify-content:space-between; align-items:center;
+      margin-bottom: 8px;
+    }
+    .acordeon-cuerpo{ margin-bottom: 14px; }
+    .acordeon-cuerpo.cerrado{ display:none; }
+
+    /* Panel profesor: nombre + guardar + marcador */
+    .input-modal{
+      width:100%; padding: 12px 14px;
+      border: 2px solid #d1d5db; border-radius: 10px;
+      font-size: 16px; outline:none; margin-bottom: 10px;
+    }
+    .input-modal:focus{ border-color: var(--navy); }
+    .btn-modal{
+      width:100%; padding: 13px; border-radius: 10px;
+      font-weight: 800; font-size: 15px; border:none; cursor:pointer;
+      margin-bottom: 10px;
+    }
+    .btn-guardar{ background:#16a34a; color:#fff; }
+    .btn-guardar:hover{ background:#15803d; }
+    .btn-siguiente-est{ background:#eab308; color:#fff; }
+    .btn-siguiente-est:hover{ background:#ca8a04; }
+    .btn-borrar{ background:#ef4444; color:#fff; font-size:13px; }
+    .btn-borrar:hover{ background:#dc2626; }
+
+    #listaPuntajes{
+      max-height: 180px; overflow-y:auto;
+      background:#f9fafb; border-radius:10px; border:1px solid #e5e7eb;
+      padding: 8px;
+    }
+</style>
+</head>
+<body>
+
+<div class="tarjeta-juego">
+  <button type="button" class="btn-control" onclick="abrirModalControl()" title="Panel de control">⚙️</button>
+  <div class="barra-estudiante" onclick="abrirModalControl()">
+    <span>🧑‍🎓 Estudiante:</span>
+    <span class="nombre" id="nombreVisible">Sin definir</span>
+    <span class="lapiz">✏️</span>
+  </div>
+
+  <!-- Zona única: arco + HUD superpuesto (marcador + bandera del país) -->
+  <div class="zona-penal">
+    <img id="hudBandera" src="imagenes/placeholder.png" alt="Imagen" class="imagen-ventana" onerror="this.src='https://placehold.co/400x300/163f1e/fff?text=%E2%9A%BD'">
+
+    <div class="hud">
+      <div class="hud-texto">
+        <span class="num-palabra" id="hudNumPalabra">Palabra 1/130</span>
+        <span class="score" id="hudScore">Puntaje: 0</span>
+      </div>
+    </div>
+
+    <div class="arco-penal"></div>
+    <div class="mensaje-penal" id="mensajePenal"></div>
+    <div class="punto-penal-marca"></div>
+    <div class="balon-animado" id="balonAnimado"></div>
+  </div>
+
+  <!-- Panel de escritura: todo integrado en la misma tarjeta -->
+  <div class="panel-escritura">
+    <input type="text" id="inputSpelling" class="input-cancha" placeholder="Escribe aquí..." autocomplete="off">
+    <button class="btn-gol" id="btnTirar" onclick="verificar()">¡Tirar a Gol! ⚽</button>
+    <button class="btn-reintentar" id="btnReintentar" onclick="reintentar()">🔁 Reintentar esta palabra</button>
+  </div>
+
+  <div class="fila-audio">
+    <button class="btn-audio" onclick="reproducir('palabra')">
+      <span class="icono">⚽</span>Palabra
+    </button>
+    <button class="btn-audio" onclick="reproducir('definicion')">
+      <span class="icono">📋</span>Definición
+    </button>
+    <button class="btn-audio" onclick="reproducir('ejemplo')">
+      <span class="icono">🗣️</span>Ejemplo
+    </button>
+  </div>
+</div>
+
+<!-- Modal: Panel de Control del profesor -->
+<div id="modalControl" class="overlay-modal hidden">
+  <div class="caja-modal mediana">
+    <div class="modal-cabecera">
+      <h3>👨‍🏫 Panel de control</h3>
+      <button class="modal-cerrar" onclick="cerrarModalControl()">✕</button>
+    </div>
+    <div class="modal-cuerpo">
+
+      <div class="separador-seccion">Selección de palabra</div>
+      <div class="tiles-accion">
+        <div class="tile-accion" onclick="accionAleatoria(event)">
+          <span class="emoji">🎲</span>
+          <div class="titulo">Random</div>
+          <div class="sub">Sortea entre las 130</div>
+        </div>
+        <div class="tile-accion" onclick="abrirModalPalabras()">
+          <span class="emoji">🔍</span>
+          <div class="titulo">Elegir palabra</div>
+          <div class="sub">Buscar y elegir</div>
+        </div>
+      </div>
+
+      <div class="separador-seccion">Estudiante</div>
+      <input type="text" id="nombreEstudiante" class="input-modal" placeholder="Nombre del estudiante..." oninput="sincronizarNombreVisible()">
+      <button class="btn-modal btn-guardar" onclick="guardarPuntaje()">💾 Guardar puntaje</button>
+      <button class="btn-modal btn-siguiente-est" onclick="resetearTurno()">🔄 Siguiente estudiante</button>
+
+      <div class="separador-seccion">Mejores puntajes</div>
+      <div id="listaPuntajes"></div>
+      <button class="btn-modal btn-borrar" style="margin-top:10px;" onclick="limpiarPuntajes()">🗑️ Borrar todos los puntajes</button>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal: elegir palabra específica (grid con glassmorphism) -->
+<div id="modalPalabras" class="overlay-modal hidden">
+  <div class="caja-modal grande">
+    <div class="modal-cabecera">
+      <h3>🔍 Elegir una palabra</h3>
+      <button class="modal-cerrar" onclick="cerrarModalPalabras()">✕</button>
+    </div>
+    <div class="modal-cuerpo">
+      <div class="modal-busqueda">
+        <input type="text" id="buscadorPalabras" placeholder="Buscar palabra o número..." oninput="filtrarModalPalabras()">
+      </div>
+      <div id="listaModalPalabras"><!-- Se llena con JS --></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Confirmación para borrar puntajes -->
+<div id="modalConfirmacion" class="overlay-modal hidden">
+  <div class="caja-modal chica">
+    <div class="text-5xl mb-4">⚠️</div>
+    <h3 class="text-3xl font-bold mb-2 text-gray-800" style="font-family:'Teko',sans-serif;">¡Atención!</h3>
+    <p class="text-lg text-gray-600 mb-6 font-bold">¿Seguro que quieres borrar todos los puntajes? Esta acción no se puede deshacer.</p>
+    <div class="flex justify-center gap-4">
+      <button class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg text-lg transition active:scale-95" onclick="cerrarModal()">Cancelar</button>
+      <button class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg shadow-md text-lg transition active:scale-95" onclick="confirmarLimpieza()">Sí, borrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const baseDeDatos = [
+    // Rondas 1 al 10 (1-10)
+    { palabra: "Germany", definicionTexto: "A country in Central Europe.", ejemploTexto: "Many famous cars are made in Germany.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Argentina", definicionTexto: "A large country in South America.", ejemploTexto: "People in Argentina love to eat barbecue.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Australia", definicionTexto: "A country and continent in Oceania.", ejemploTexto: "You can learn how to surf in Australia.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Belgium", definicionTexto: "A European country near France.", ejemploTexto: "Belgium is famous for its delicious waffles.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Brazil", definicionTexto: "The largest country in South America.", ejemploTexto: "The carnival in Brazil is full of music.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Canada", definicionTexto: "A large country in North America.", ejemploTexto: "Maple syrup comes from trees in Canada.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Colombia", definicionTexto: "A country in South America.", ejemploTexto: "Colombia grows some of the best coffee.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Croatia", definicionTexto: "A European country with a sea coast.", ejemploTexto: "The water in Croatia is clear and blue.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Curacao", definicionTexto: "An island country in the Caribbean.", ejemploTexto: "People go diving in the coral reefs of Curacao.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Czech Republic", definicionTexto: "A country in Central Europe.", ejemploTexto: "There are many old libraries in the Czech Republic.", audioPalabra: "", audioDef: "", audioEj: "" },
+
+    // Rondas 11 al 20
+    { palabra: "Ecuador", definicionTexto: "A country in South America.", ejemploTexto: "Large tortoises live on islands in Ecuador.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "England", definicionTexto: "A country in the United Kingdom.", ejemploTexto: "People in England like to drink tea.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "France", definicionTexto: "A country in Western Europe.", ejemploTexto: "You can see famous paintings in France.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Japan", definicionTexto: "An island country in East Asia.", ejemploTexto: "Advanced robots are designed in Japan.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Mexico", definicionTexto: "A country in North America.", ejemploTexto: "Mexico has ancient temples in the jungle.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Morocco", definicionTexto: "A country in North Africa.", ejemploTexto: "You can see camels in the deserts of Morocco.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "New Zealand", definicionTexto: "An island country in the Pacific.", ejemploTexto: "Many fantasy movies were filmed in New Zealand.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Norway", definicionTexto: "A country in Northern Europe.", ejemploTexto: "High mountains called fjords are in Norway.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Panama", definicionTexto: "A country in Central America.", ejemploTexto: "Large ships pass through the Panama Canal.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Paraguay", definicionTexto: "A country in South America.", ejemploTexto: "People drink tereré to stay cool in Paraguay.", audioPalabra: "", audioDef: "", audioEj: "" },
+
+    // Rondas 21 al 30
+    { palabra: "Portugal", definicionTexto: "A country on the coast of Europe.", ejemploTexto: "Beautiful tiles decorate the houses in Portugal.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Qatar", definicionTexto: "A country in the Middle East.", ejemploTexto: "It is very hot and sunny in Qatar.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Scotland", definicionTexto: "A country in the north of the UK.", ejemploTexto: "People tell stories about a monster in Scotland.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Senegal", definicionTexto: "A country in West Africa.", ejemploTexto: "Senegal is known for its beautiful textiles.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "South Africa", definicionTexto: "A country at the tip of Africa.", ejemploTexto: "You can see penguins on the beach in South Africa.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "South Korea", definicionTexto: "A country in East Asia.", ejemploTexto: "Many people watch dramas from South Korea.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Spain", definicionTexto: "A country in Southwestern Europe.", ejemploTexto: "People in Spain like to dance flamenco.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Sweden", definicionTexto: "A country in Northern Europe.", ejemploTexto: "Sweden is home to very creative designs.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Switzerland", definicionTexto: "A mountainous country in Europe.", ejemploTexto: "People go skiing in the mountains of Switzerland.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "The Netherlands", definicionTexto: "A country in Europe with tulips.", ejemploTexto: "There are millions of bicycles in The Netherlands.", audioPalabra: "", audioDef: "", audioEj: "" },
+
+    // Rondas 31 al 40
+    { palabra: "Tunisia", definicionTexto: "A country in North Africa.", ejemploTexto: "Ancient ruins are located near the sea in Tunisia.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Turkey", definicionTexto: "A country between Europe and Asia.", ejemploTexto: "Hot air balloons fly over the valley in Turkey.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "United States", definicionTexto: "A large country in North America.", ejemploTexto: "Hollywood movies are made in the United States.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Uruguay", definicionTexto: "A small country in South America.", ejemploTexto: "Uruguay has many beautiful and quiet beaches.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Soccer", definicionTexto: "A sport played with a ball.", ejemploTexto: "Brazil has won many soccer tournaments.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Stadium", definicionTexto: "A place to watch sports.", ejemploTexto: "Fans sing loud songs inside the stadium.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Athlete", definicionTexto: "A person who practices sports.", ejemploTexto: "Every athlete must eat healthy food.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Medal", definicionTexto: "An award for a winner.", ejemploTexto: "She worked hard to win a gold medal.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Trophy", definicionTexto: "A large cup for a champion.", ejemploTexto: "The captain lifted the trophy with joy.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Flag", definicionTexto: "A symbol of a country.", ejemploTexto: "Each country has a flag with different colors.", audioPalabra: "", audioDef: "", audioEj: "" },
+
+    // Rondas 41 al 50
+    { palabra: "Chocolate", definicionTexto: "A sweet treat made from cacao.", ejemploTexto: "Swiss chocolate is famous all over the world.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Kangaroo", definicionTexto: "An animal that hops from Australia.", ejemploTexto: "The kangaroo is a symbol of Australia.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Sushi", definicionTexto: "A dish with rice and fish.", ejemploTexto: "I want to try traditional sushi in Japan.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Coffee", definicionTexto: "A drink made from roasted beans.", ejemploTexto: "I drink a cup of coffee every morning.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Castle", definicionTexto: "A big historical stone house.", ejemploTexto: "A king lived in that stone castle in Scotland.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Canal", definicionTexto: "A water path made for boats.", ejemploTexto: "The Panama Canal is a great engineering work.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Desert", definicionTexto: "A dry place with lots of sand.", ejemploTexto: "The sun is very strong in the desert.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Island", definicionTexto: "Land with water all around it.", ejemploTexto: "Curacao is a small and colorful island.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Safari", definicionTexto: "A trip to see wild animals.", ejemploTexto: "We took photos of a giraffe on the safari.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Hockey", definicionTexto: "A sport played on ice.", ejemploTexto: "Players use sticks to hit the puck in hockey.", audioPalabra: "", audioDef: "", audioEj: "" },
+
+    // Rondas 51 al 60
+    { palabra: "Pyramid", definicionTexto: "A triangle-shaped stone building.", ejemploTexto: "The sun reflects on the stone pyramid.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Pizza", definicionTexto: "A flat bread with toppings.", ejemploTexto: "Pizza is a favorite food for many children.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Ocean", definicionTexto: "A very big body of salt water.", ejemploTexto: "The ocean is home to many different fish.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Forest", definicionTexto: "A place with many green trees.", ejemploTexto: "We went for a walk in the green forest.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Mountain", definicionTexto: "A very high piece of land.", ejemploTexto: "It is difficult to climb a snowy mountain.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Team", definicionTexto: "A group of players together.", ejemploTexto: "A good team always helps each other.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Player", definicionTexto: "A person in a sports game.", ejemploTexto: "The basketball player is very tall.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Coach", definicionTexto: "A person who teaches a team.", ejemploTexto: "Our coach tells us to never give up.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Score", definicionTexto: "The points in a match.", ejemploTexto: "Check the score on the big screen.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Goal", definicionTexto: "Points in soccer or hockey.", ejemploTexto: "The crowd cheered when he kicked a goal.", audioPalabra: "", audioDef: "", audioEj: "" },
+
+    // Rondas 61 al 70
+    { palabra: "Referee", definicionTexto: "A person who checks the rules.", ejemploTexto: "The referee has a whistle in his hand.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Whistle", definicionTexto: "A small tool that makes a sound.", ejemploTexto: "The game starts when you hear the whistle.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Uniform", definicionTexto: "Special clothes for sports.", ejemploTexto: "My team uniform is blue and white.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Fan", definicionTexto: "A person who loves a team.", ejemploTexto: "A loyal fan wears the team's colors.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Cheer", definicionTexto: "To shout to support a team.", ejemploTexto: "We cheer when our friends are playing.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Victory", definicionTexto: "Winning a competition.", ejemploTexto: "The team celebrated their great victory.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Champion", definicionTexto: "The person who wins first place.", ejemploTexto: "He is the new chess champion of the school.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Contest", definicionTexto: "A competition or a game.", ejemploTexto: "I am nervous about the spelling contest.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Training", definicionTexto: "Practice to get better.", ejemploTexto: "Daily training makes you a better athlete.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Exercise", definicionTexto: "Moving to stay fit.", ejemploTexto: "Jumping rope is a fun way to exercise.", audioPalabra: "", audioDef: "", audioEj: "" },
+
+    // Rondas 71 al 80
+    { palabra: "Culture", definicionTexto: "Traditions of a group of people.", ejemploTexto: "We love learning about different culture.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Language", definicionTexto: "The way people speak.", ejemploTexto: "Music is a universal language.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Travel", definicionTexto: "To visit a new place.", ejemploTexto: "I hope to travel around the world one day.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Passport", definicionTexto: "A book for traveling abroad.", ejemploTexto: "Don't forget to pack your passport.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Continent", definicionTexto: "A very large area of land.", ejemploTexto: "South America is a beautiful continent.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "World", definicionTexto: "The planet where we live.", ejemploTexto: "There are many wonders in this world.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Map", definicionTexto: "A drawing of a place.", ejemploTexto: "Use the map to find the hidden treasure.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Coast", definicionTexto: "Land next to the sea.", ejemploTexto: "We walked along the coast at sunset.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Beach", definicionTexto: "Sand by the water.", ejemploTexto: "I like to build sandcastles on the beach.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "River", definicionTexto: "A flow of fresh water.", ejemploTexto: "Fish swim in the cold water of the river.", audioPalabra: "", audioDef: "", audioEj: "" },
+
+    // Rondas 81 al 90
+    { palabra: "Tulip", definicionTexto: "A beautiful colorful flower.", ejemploTexto: "A red tulip is growing in the garden.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Waffle", definicionTexto: "A breakfast food with square holes.", ejemploTexto: "I like my waffle with honey and fruit.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Watch", definicionTexto: "A tool to tell the time.", ejemploTexto: "Look at your watch so you are not late.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Bagpipe", definicionTexto: "A musical instrument from Scotland.", ejemploTexto: "The sound of the bagpipe is very unique.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Lion", definicionTexto: "A large wild cat.", ejemploTexto: "The lion rested under the big tree.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Eagle", definicionTexto: "A bird that flies very high.", ejemploTexto: "The eagle has very strong wings.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Panda", definicionTexto: "A black and white bear.", ejemploTexto: "The panda spends the day eating bamboo.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Robot", definicionTexto: "A machine that helps people.", ejemploTexto: "My cousin built a small robot for class.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "History", definicionTexto: "Events from the past.", ejemploTexto: "We read a book about the history of Japan.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Bridge", definicionTexto: "A road over a river.", ejemploTexto: "The golden bridge looks beautiful at night.", audioPalabra: "", audioDef: "", audioEj: "" },
+
+    // Rondas 91 al 100
+    { palabra: "Party", definicionTexto: "A celebration with friends.", ejemploTexto: "Let's have a party after the festival!", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Music", definicionTexto: "Rhythms and melodies.", ejemploTexto: "I listen to music while I do my homework.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Dance", definicionTexto: "To move your body to a beat.", ejemploTexto: "Let's learn a traditional dance from Spain.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Festival", definicionTexto: "A special public event.", ejemploTexto: "The sports festival is once a year.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Talent", definicionTexto: "A special skill.", ejemploTexto: "Singing is a very special talent.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Healthy", definicionTexto: "Good for your body.", ejemploTexto: "Eating an apple is a healthy choice.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Friend", definicionTexto: "Someone you care about.", ejemploTexto: "A good friend always listens to you.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Peace", definicionTexto: "A state of quiet or no war.", ejemploTexto: "White birds are often symbols of peace.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Future", definicionTexto: "The time that is coming.", ejemploTexto: "Computers will be different in the future.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Global", definicionTexto: "Relating to the whole world.", ejemploTexto: "We live in a large global community.", audioPalabra: "", audioDef: "", audioEj: "" },
+
+    // MUERTE SÚBITA (TIE-BREAKER) 101 al 130
+    { palabra: "Archipelago", definicionTexto: "A large group or chain of islands.", ejemploTexto: "Japan is a beautiful archipelago in East Asia.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Championship", definicionTexto: "A high-level contest to find a winner.", ejemploTexto: "Every athlete dreams of winning the championship.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Tournament", definicionTexto: "A series of games to find one champion.", ejemploTexto: "We are ready for the school's soccer tournament.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Gymnastics", definicionTexto: "A sport involving physical exercises and balance.", ejemploTexto: "She won a gold medal for her routine in gymnastics.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Volleyball", definicionTexto: "A game where teams hit a ball over a net.", ejemploTexto: "Volleyball is very popular on the beaches of Brazil.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Marathon", definicionTexto: "A very long running race (42 km).", ejemploTexto: "He trained for a year to run the city marathon.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Audience", definicionTexto: "A group of people watching an event.", ejemploTexto: "The audience cheered for the Colombian team.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Atmosphere", definicionTexto: "The feeling or mood of a place.", ejemploTexto: "The atmosphere in the stadium was incredible.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Ceremony", definicionTexto: "A formal event for a special occasion.", ejemploTexto: "The opening ceremony had many colorful flags.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Discipline", definicionTexto: "The practice of following rules and training.", ejemploTexto: "Sports teach students the value of discipline.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Diversity", definicionTexto: "A range of different things or people.", ejemploTexto: "Our festival celebrates the diversity of the world.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Tradition", definicionTexto: "A custom passed down through years.", ejemploTexto: "Dancing flamenco is a famous tradition in Spain.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Hospitality", definicionTexto: "Friendly treatment of guests or visitors.", ejemploTexto: "Turkey is known for its wonderful hospitality.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Excellence", definicionTexto: "The quality of being extremely good.", ejemploTexto: "Our school promotes excellence in every activity.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Performance", definicionTexto: "The act of presenting a skill or talent.", ejemploTexto: "The gymnasts gave a wonderful performance.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Heritage", definicionTexto: "Culture and traditions from the past.", ejemploTexto: "We must protect the historical heritage of our country.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Environment", definicionTexto: "The natural world around us.", ejemploTexto: "Athletes need a clean environment to practice.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Expedition", definicionTexto: "A journey for a specific purpose.", ejemploTexto: "They went on an expedition to the Amazon forest.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Adventure", definicionTexto: "An exciting or unusual experience.", ejemploTexto: "Traveling to a new country is a great adventure.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Spectacle", definicionTexto: "A visually striking performance.", ejemploTexto: "The fireworks at the festival were a grand spectacle.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Mediterranean", definicionTexto: "Related to the sea near Europe and Africa.", ejemploTexto: "Croatia has a beautiful Mediterranean coast.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Scandinavia", definicionTexto: "A region in Northern Europe.", ejemploTexto: "Norway and Sweden are part of Scandinavia.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Caribbean", definicionTexto: "Related to the Caribbean Sea region.", ejemploTexto: "Curacao is a sunny island in the Caribbean.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Peninsula", definicionTexto: "Land almost surrounded by water.", ejemploTexto: "Portugal and Spain are located on a peninsula.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Anthem", definicionTexto: "A song that represents a country.", ejemploTexto: "We stand up when we hear the national anthem.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Swimming", definicionTexto: "The sport of moving through water.", ejemploTexto: "Swimming is a great way to stay healthy.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Cycling", definicionTexto: "The sport of riding a bicycle.", ejemploTexto: "Cycling is popular in the mountains of Colombia.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Wrestling", definicionTexto: "A sport where two people grapple.", ejemploTexto: "Wrestling is one of the oldest sports in history.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Archery", definicionTexto: "The sport of shooting arrows with a bow.", ejemploTexto: "Concentration is key for a champion in archery.", audioPalabra: "", audioDef: "", audioEj: "" },
+    { palabra: "Basketball", definicionTexto: "A game of throwing a ball into a hoop.", ejemploTexto: "The basketball court is ready for the final match.", audioPalabra: "", audioDef: "", audioEj: "" }
+  ];
+  let indiceActual = 0;
+  let puntaje = 0;
+  let bloqueado = false;
+
+  const POS_REPOSO = { top: 88, left: 50 };
+
+  const balon = () => document.getElementById('balonAnimado');
+  const mensajePenal = () => document.getElementById('mensajePenal');
+
+  window.onload = () => {
+    construirGridPalabras();
+    cargarPuntajesGuardados();
+    siguientePalabra();
+  };
+
+  // ===== Panel de control (modal) =====
+  function abrirModalControl() {
+    document.getElementById('modalControl').classList.remove('hidden');
+    setTimeout(() => document.getElementById('nombreEstudiante').focus(), 50);
+  }
+
+  function sincronizarNombreVisible() {
+    const nombre = document.getElementById('nombreEstudiante').value.trim();
+    document.getElementById('nombreVisible').textContent = nombre || 'Sin definir';
+  }
+  function cerrarModalControl() {
+    document.getElementById('modalControl').classList.add('hidden');
+  }
+  function accionAleatoria(e) {
+    // Pequeño efecto de "sorteo" para diferenciar claramente de "elegir palabra"
+    const tile = e.currentTarget;
+    tile.classList.add('sorteando');
+    setTimeout(() => tile.classList.remove('sorteando'), 450);
+    setTimeout(() => siguientePalabra(true), 200);
+    cerrarModalControl();
+  }
+
+  // ===== Modal: elegir palabra específica (grid con acordeón) =====
+  function construirGridPalabras() {
+    const contenedor = document.getElementById('listaModalPalabras');
+    contenedor.innerHTML = '';
+
+    const grupos = [
+      { titulo: 'Fase de Grupos (1-100)', desde: 0, hasta: 100 },
+      { titulo: 'Muerte Súbita (101-130)', desde: 100, hasta: baseDeDatos.length }
+    ];
+
+    grupos.forEach((grupo, gi) => {
+      const idCuerpo = `acordeon-${gi}`;
+
+      const botonTitulo = document.createElement('button');
+      botonTitulo.type = 'button';
+      botonTitulo.className = 'acordeon-titulo';
+      botonTitulo.innerHTML = `<span>${grupo.titulo}</span><span class="flecha">▾</span>`;
+      botonTitulo.onclick = () => toggleAcordeon(idCuerpo, botonTitulo);
+
+      const cuerpo = document.createElement('div');
+      cuerpo.className = 'acordeon-cuerpo' + (gi === 0 ? '' : ' cerrado');
+      cuerpo.id = idCuerpo;
+
+      const grid = document.createElement('div');
+      grid.className = 'grid-palabras';
+
+      for (let index = grupo.desde; index < grupo.hasta; index++) {
+        const item = baseDeDatos[index];
+        const tile = document.createElement('button');
+        tile.type = 'button';
+        tile.className = 'tile-palabra';
+        tile.dataset.index = index;
+        tile.dataset.texto = item.palabra.toLowerCase();
+        tile.innerHTML = `<span class="num">#${index + 1}</span>${item.palabra}`;
+        tile.onclick = () => seleccionarPalabraDesdeModal(index);
+        grid.appendChild(tile);
+      }
+
+      cuerpo.appendChild(grid);
+      contenedor.appendChild(botonTitulo);
+      contenedor.appendChild(cuerpo);
+    });
+  }
+
+  function toggleAcordeon(id, boton) {
+    const cuerpo = document.getElementById(id);
+    cuerpo.classList.toggle('cerrado');
+    boton.querySelector('.flecha').textContent = cuerpo.classList.contains('cerrado') ? '▾' : '▴';
+  }
+
+  function abrirModalPalabras() {
+    document.getElementById('modalPalabras').classList.remove('hidden');
+    document.getElementById('buscadorPalabras').value = '';
+    filtrarModalPalabras();
+    marcarPalabraActivaEnModal();
+    setTimeout(() => document.getElementById('buscadorPalabras').focus(), 50);
+  }
+
+  function cerrarModalPalabras() {
+    document.getElementById('modalPalabras').classList.add('hidden');
+  }
+
+  function filtrarModalPalabras() {
+    const texto = document.getElementById('buscadorPalabras').value.trim().toLowerCase();
+    document.querySelectorAll('.tile-palabra').forEach(tile => {
+      const numero = (parseInt(tile.dataset.index) + 1).toString();
+      const coincide = tile.dataset.texto.includes(texto) || numero.includes(texto);
+      tile.style.display = coincide ? 'block' : 'none';
+    });
+    // Si hay búsqueda activa, abre ambos acordeones para que se vean los resultados
+    if (texto) {
+      document.querySelectorAll('.acordeon-cuerpo').forEach(c => c.classList.remove('cerrado'));
+    }
+  }
+
+  function marcarPalabraActivaEnModal() {
+    document.querySelectorAll('.tile-palabra').forEach(tile => {
+      tile.classList.toggle('activo', parseInt(tile.dataset.index) === indiceActual);
+    });
+  }
+
+  function seleccionarPalabraDesdeModal(index) {
+    indiceActual = index;
+    actualizarInterfaz();
+    cerrarModalPalabras();
+    cerrarModalControl();
+  }
+
+  function siguientePalabra(conEfecto) {
+    indiceActual = Math.floor(Math.random() * baseDeDatos.length);
+    actualizarInterfaz(conEfecto);
+  }
+
+  function actualizarInterfaz(conEfecto) {
+    const numTexto = document.getElementById('hudNumPalabra');
+    numTexto.innerText = `Palabra ${indiceActual + 1}/130`;
+    if (conEfecto) {
+      numTexto.classList.remove('girando');
+      void numTexto.offsetWidth;
+      numTexto.classList.add('girando');
+    }
+
+    const input = document.getElementById('inputSpelling');
+    input.value = '';
+    input.disabled = false;
+    input.focus();
+
+    document.getElementById('btnTirar').disabled = false;
+    bloqueado = false;
+    document.getElementById('btnReintentar').classList.remove('mostrar');
+
+    let numeroImagen = indiceActual + 1;
+    let formatoNumeroImg = numeroImagen < 10 ? '0' + numeroImagen : numeroImagen;
+    const imagen = document.getElementById('hudBandera');
+    imagen.src = 'imagenes/' + formatoNumeroImg + '.jpg';
+    imagen.classList.remove('oculta'); // asegura que vuelva a mostrarse en la nueva palabra
+
+    resetearBalon();
+  }
+
+  // ===== Animación del balón =====
+  function moverBalon(top, left) {
+    const b = balon();
+    b.style.top = top + '%';
+    b.style.left = left + '%';
+  }
+
+  function resetearBalon() {
+    balon().classList.remove('gol', 'fallo');
+    mensajePenal().classList.remove('gol', 'fallo');
+    mensajePenal().textContent = '';
+    moverBalon(POS_REPOSO.top, POS_REPOSO.left);
+    document.querySelector('.zona-penal').classList.remove('modo-tiro');
+    document.getElementById('hudBandera').classList.remove('oculta');
+    void balon().offsetWidth;
+  }
+
+  function rango(min, max) {
+    return Math.random() * (max - min) + min;
+  }
+
+  function destinoFallo() {
+    const opciones = [
+      () => ({ top: rango(15, 35), left: rango(2, 20) }),
+      () => ({ top: rango(15, 35), left: rango(80, 98) }),
+      () => ({ top: rango(-6, 2), left: rango(30, 70) }),
+    ];
+    return opciones[Math.floor(Math.random() * opciones.length)]();
+  }
+
+  function verificar() {
+    if (bloqueado) return;
+    const input = document.getElementById('inputSpelling').value.trim().toLowerCase();
+    if (!input) return;
+
+    const esGol = input === baseDeDatos[indiceActual].palabra.toLowerCase();
+
+    bloqueado = true;
+    document.getElementById('inputSpelling').disabled = true;
+    document.getElementById('btnTirar').disabled = true;
+    document.getElementById('hudBandera').classList.add('oculta'); // se quita del camino del balón
+    document.querySelector('.zona-penal').classList.add('modo-tiro'); // revela arco y balón
+
+    requestAnimationFrame(() => {
+      if (esGol) {
+        moverBalon(30, 50);
+        balon().classList.add('gol');
+        mensajePenal().classList.add('gol');
+        mensajePenal().textContent = '¡GOLAZO!';
+        puntaje += 10;
+        document.getElementById('hudScore').innerText = `Puntaje: ${puntaje}`;
+      } else {
+        const destino = destinoFallo();
+        moverBalon(destino.top, destino.left);
+        balon().classList.add('fallo');
+        mensajePenal().classList.add('fallo');
+        mensajePenal().textContent = '¡FUERA!';
+      }
+    });
+
+    setTimeout(() => {
+      if (esGol) {
+        siguientePalabra();
+      } else {
+        document.getElementById('btnReintentar').classList.add('mostrar');
+      }
+    }, 1300);
+  }
+
+  function reintentar() {
+    document.getElementById('inputSpelling').disabled = false;
+    document.getElementById('inputSpelling').value = '';
+    document.getElementById('btnTirar').disabled = false;
+    document.getElementById('btnReintentar').classList.remove('mostrar');
+    bloqueado = false;
+    resetearBalon();
+    document.getElementById('inputSpelling').focus();
+  }
+
+  // ===== Audio: siempre intenta el archivo real primero.
+  // La voz robótica SOLO actúa como respaldo si el archivo no carga. =====
+  function reproducir(tipo) {
+    const p = baseDeDatos[indiceActual];
+    let rutaFichero = '';
+    let textoDeRespaldo = '';
+    let numeroAudio = 0;
+
+    if (tipo === 'palabra') {
+      numeroAudio = (indiceActual * 3) + 1;
+      rutaFichero = p.audioPalabra;
+      textoDeRespaldo = p.palabra;
+    } else if (tipo === 'definicion') {
+      numeroAudio = (indiceActual * 3) + 2;
+      rutaFichero = p.audioDef;
+      textoDeRespaldo = p.definicionTexto;
+    } else if (tipo === 'ejemplo') {
+      numeroAudio = (indiceActual * 3) + 3;
+      rutaFichero = p.audioEj;
+      textoDeRespaldo = p.ejemploTexto;
+    }
+
+    if (rutaFichero === '') {
+      let formatoNumero = numeroAudio < 10 ? '0' + numeroAudio : numeroAudio;
+      rutaFichero = 'audios/' + formatoNumero + '.mp3';
+    }
+
+    let reproductor = new Audio(rutaFichero);
+    reproductor.play().catch(function () {
+      hablarConRobot(textoDeRespaldo);
+    });
+  }
+
+  function hablarConRobot(texto) {
+    let v = new SpeechSynthesisUtterance(texto);
+    v.lang = 'en-US';
+    window.speechSynthesis.speak(v);
+  }
+
+  // ===== Puntajes =====
+  function guardarPuntaje() {
+    const nombre = document.getElementById('nombreEstudiante').value.trim() || 'Jugador desconocido';
+    let puntajesGuardados = JSON.parse(localStorage.getItem('spellingScores')) || [];
+    puntajesGuardados.push({ nombre: nombre, puntos: puntaje });
+    puntajesGuardados.sort((a, b) => b.puntos - a.puntos);
+    localStorage.setItem('spellingScores', JSON.stringify(puntajesGuardados));
+    mostrarPuntajes(puntajesGuardados);
+  }
+
+  function cargarPuntajesGuardados() {
+    let puntajesGuardados = JSON.parse(localStorage.getItem('spellingScores')) || [];
+    mostrarPuntajes(puntajesGuardados);
+  }
+
+  function mostrarPuntajes(arreglo) {
+    const lista = document.getElementById('listaPuntajes');
+    lista.innerHTML = '';
+
+    if (arreglo.length === 0) {
+      lista.innerHTML = '<p class="text-sm text-gray-400 text-center py-2">Aún no hay puntajes</p>';
+      return;
+    }
+
+    arreglo.forEach((item, index) => {
+      const div = document.createElement('div');
+      div.className = 'p-2 mb-2 bg-white rounded shadow text-sm font-bold flex justify-between border border-gray-200';
+
+      let medalla = '';
+      if (index === 0) medalla = '🥇 ';
+      else if (index === 1) medalla = '🥈 ';
+      else if (index === 2) medalla = '🥉 ';
+      else medalla = `<span class="text-gray-400 text-xs w-5 inline-block">${index + 1}.</span> `;
+
+      div.innerHTML = `<span>${medalla}${item.nombre}</span> <span class="text-green-600">${item.puntos} pts</span>`;
+      lista.appendChild(div);
+    });
+  }
+
+  function limpiarPuntajes() {
+    document.getElementById('modalConfirmacion').classList.remove('hidden');
+  }
+  function cerrarModal() {
+    document.getElementById('modalConfirmacion').classList.add('hidden');
+  }
+  function confirmarLimpieza() {
+    localStorage.removeItem('spellingScores');
+    mostrarPuntajes([]);
+    cerrarModal();
+  }
+
+  function resetearTurno() {
+    puntaje = 0;
+    document.getElementById('hudScore').innerText = 'Puntaje: 0';
+    document.getElementById('nombreEstudiante').value = '';
+    sincronizarNombreVisible();
+    siguientePalabra();
+    cerrarModalControl();
+  }
+
+  // ===== Registro del Service Worker: guarda todo en el dispositivo
+  // la primera vez que se abre con internet, para que luego funcione
+  // sin conexión. =====
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(() => console.log('[App] Listo para funcionar sin conexión.'))
+        .catch((error) => console.log('[App] No se pudo activar el modo sin conexión:', error));
+    });
+  }
+</script>
+</body>
+</html>

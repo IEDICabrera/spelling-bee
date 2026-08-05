@@ -28,6 +28,7 @@
       min-height: 100vh;
       min-height: 100dvh;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
       padding: 12px;
@@ -46,6 +47,17 @@
       box-shadow: 0 25px 60px rgba(0,0,0,0.65);
       border: 4px solid var(--navy);
       overflow: hidden;
+      transition: transform 0.3s ease;
+    }
+
+    footer{
+      width: 100%;
+      max-width: 430px;
+      text-align: center;
+      color: rgba(255,255,255,0.55);
+      font-size: 0.7rem;
+      margin-top: 10px;
+      padding: 0 8px;
     }
 
     /* Botón de control del profesor: esquina opuesta a la imagen, no se encima */
@@ -276,6 +288,7 @@
       z-index: 100;
       padding: 14px;
     }
+    .overlay-modal.hidden{ display:none; }
     .caja-modal{
       background: #fff;
       border-radius: 18px;
@@ -306,6 +319,96 @@
     }
     .modal-cerrar:hover{ opacity:1; }
     .modal-cuerpo{ overflow-y:auto; padding: 18px 20px; }
+
+    /* ===== Panel de control como cajón lateral en escritorio =====
+       En vez de tapar el juego con un overlay centrado, en pantallas
+       grandes el panel de control se desliza desde la derecha y deja
+       el juego visible y usable al mismo tiempo. */
+    @media (min-width: 900px){
+      #modalControl.overlay-modal{
+        background: rgba(10,15,25,0.18);
+        backdrop-filter: none;
+        justify-content: flex-end;
+        align-items: stretch;
+        padding: 0;
+        pointer-events: none; /* deja clickear el juego fuera del panel */
+      }
+      #modalControl .caja-modal{
+        pointer-events: auto;
+        max-width: 380px;
+        max-height: 100vh;
+        height: 100%;
+        border-radius: 0;
+        box-shadow: -14px 0 40px rgba(0,0,0,0.35);
+        animation: entrar-cajon 0.25s ease;
+      }
+      @keyframes entrar-cajon{
+        from{ transform: translateX(30px); opacity: 0; }
+        to{ transform: translateX(0); opacity: 1; }
+      }
+      /* El modal de elegir palabra se abre desde dentro del panel,
+         mantenlo como cajón también para no tapar el juego */
+      #modalPalabras.overlay-modal{
+        background: rgba(10,15,25,0.18);
+        backdrop-filter: none;
+        justify-content: flex-end;
+        align-items: stretch;
+        padding: 0;
+        pointer-events: none;
+      }
+      #modalPalabras .caja-modal{
+        pointer-events: auto;
+        max-width: 420px;
+        max-height: 100vh;
+        height: 100%;
+        border-radius: 0;
+        box-shadow: -14px 0 40px rgba(0,0,0,0.35);
+        animation: entrar-cajon 0.25s ease;
+      }
+    }
+
+    /* Botón para abrir el panel en una ventana aparte (solo escritorio) */
+    .btn-ventana-aparte{
+      display:none;
+      width:100%; padding: 11px; border-radius: 10px;
+      font-weight: 700; font-size: 13px; border: 2px dashed #94a3b8;
+      background: #f8fafc; color: #334155; cursor:pointer;
+      margin-bottom: 14px;
+      align-items:center; justify-content:center; gap:6px;
+    }
+    @media (min-width: 900px){
+      .btn-ventana-aparte{ display:flex; }
+    }
+    .btn-ventana-aparte:hover{ background:#eef2f7; border-color:#64748b; }
+
+    /* Aviso de modo "solo panel", usado cuando el archivo se abre en
+       la ventana emergente dedicada al control */
+    .aviso-modo-panel{
+      display:none;
+      background:#0a1f44; color:#fff; text-align:center;
+      font-size:0.75rem; font-weight:700; padding:8px 12px;
+    }
+    body.modo-panel-remoto .aviso-modo-panel{ display:block; }
+    body.modo-panel-remoto .tarjeta-juego,
+    body.modo-panel-remoto footer{ display:none; }
+    body.modo-panel-remoto #modalControl{
+      position: static;
+      display:flex !important;
+      background:none;
+      backdrop-filter:none;
+      width:100%; height:100vh;
+      padding: 0;
+    }
+    body.modo-panel-remoto #modalControl .caja-modal{
+      max-width: 480px;
+      width:100%;
+      height:100vh;
+      max-height:100vh;
+      border-radius:0;
+      box-shadow:none;
+      margin: 0 auto;
+    }
+    body.modo-panel-remoto .modal-cerrar{ display:none; }
 
     /* Tiles de acción principales dentro del panel de control */
     .tiles-accion{
@@ -476,23 +579,18 @@
 <footer>
   <p>&copy; 2026 Institución Educativa Integrada de Cabrera. Todos los derechos reservados.</p>
 </footer>
-  
-</div>
 
-<footer>
-  <p>&copy; 2026 Institución Educativa Integrada de Cabrera. Todos los derechos reservados.</p>
-</footer>
-
-<!-- Modal: Panel de Control del profesor -->
-  
 <!-- Modal: Panel de Control del profesor -->
 <div id="modalControl" class="overlay-modal hidden">
   <div class="caja-modal mediana">
+    <div class="aviso-modo-panel">🖥️ Ventana de control — sincronizada con la pantalla de juego</div>
     <div class="modal-cabecera">
       <h3>👨‍🏫 Panel de control</h3>
       <button class="modal-cerrar" onclick="cerrarModalControl()">✕</button>
     </div>
     <div class="modal-cuerpo">
+
+      <button type="button" class="btn-ventana-aparte" onclick="abrirVentanaControl()">🗔 Abrir panel en otra ventana</button>
 
       <div class="separador-seccion">Selección de palabra</div>
       <div class="tiles-accion">
@@ -709,6 +807,8 @@
   let bloqueado = false;
 
   const POS_REPOSO = { top: 88, left: 50 };
+  const CANAL = ('BroadcastChannel' in window) ? new BroadcastChannel('spelling-bee-sync') : null;
+  const esVentanaPanel = new URLSearchParams(window.location.search).get('panel') === 'control';
 
   const balon = () => document.getElementById('balonAnimado');
   const mensajePenal = () => document.getElementById('mensajePenal');
@@ -716,8 +816,64 @@
   window.onload = () => {
     construirGridPalabras();
     cargarPuntajesGuardados();
-    siguientePalabra();
+
+    if (esVentanaPanel) {
+      // Esta pestaña/ventana es SOLO el panel de control: no juega,
+      // solo envía comandos y refleja el estado que llega de la pantalla principal.
+      document.body.classList.add('modo-panel-remoto');
+      document.getElementById('modalControl').classList.remove('hidden');
+      if (CANAL) {
+        CANAL.postMessage({ tipo: 'pedirEstado' });
+      }
+    } else {
+      siguientePalabra();
+    }
+
+    if (CANAL) {
+      CANAL.onmessage = (evento) => manejarMensajeCanal(evento.data);
+    }
   };
+
+  // ===== Sincronización entre ventanas (pantalla de juego <-> panel) =====
+  function estadoActual() {
+    return {
+      indiceActual, puntaje,
+      nombre: document.getElementById('nombreEstudiante').value
+    };
+  }
+  function difundirEstado() {
+    if (CANAL && !esVentanaPanel) CANAL.postMessage({ tipo: 'estado', data: estadoActual() });
+  }
+  function manejarMensajeCanal(msg) {
+    if (!msg || !msg.tipo) return;
+
+    if (esVentanaPanel) {
+      // El panel remoto solo escucha actualizaciones de estado para reflejarlas
+      if (msg.tipo === 'estado') {
+        document.getElementById('hudScore').innerText = `Puntaje: ${msg.data.puntaje}`;
+        const campoNombre = document.getElementById('nombreEstudiante');
+        if (document.activeElement !== campoNombre) campoNombre.value = msg.data.nombre;
+        sincronizarNombreVisible();
+      }
+      if (msg.tipo === 'puntajesActualizados') mostrarPuntajes(msg.data);
+      return;
+    }
+
+    // La ventana principal (juego) escucha comandos que vienen del panel remoto
+    if (msg.tipo === 'pedirEstado') { difundirEstado(); mostrarPuntajes(JSON.parse(localStorage.getItem('spellingScores')) || []); }
+    if (msg.tipo === 'cmdAleatoria') siguientePalabra(true);
+    if (msg.tipo === 'cmdElegir') { indiceActual = msg.data; actualizarInterfaz(); }
+    if (msg.tipo === 'cmdNombre') { document.getElementById('nombreEstudiante').value = msg.data; sincronizarNombreVisible(); }
+    if (msg.tipo === 'cmdGuardar') guardarPuntaje();
+    if (msg.tipo === 'cmdSiguienteEstudiante') resetearTurno();
+    if (msg.tipo === 'cmdBorrarPuntajes') confirmarLimpieza();
+  }
+
+  function abrirVentanaControl() {
+    const url = window.location.pathname + '?panel=control';
+    window.open(url, 'panelControlSpellingBee', 'width=460,height=800,noopener');
+    cerrarModalControl();
+  }
 
   // ===== Panel de control (modal) =====
   function abrirModalControl() {
@@ -728,6 +884,7 @@
   function sincronizarNombreVisible() {
     const nombre = document.getElementById('nombreEstudiante').value.trim();
     document.getElementById('nombreVisible').textContent = nombre || 'Sin definir';
+    if (esVentanaPanel && CANAL) CANAL.postMessage({ tipo: 'cmdNombre', data: nombre });
   }
   function cerrarModalControl() {
     document.getElementById('modalControl').classList.add('hidden');
@@ -737,8 +894,12 @@
     const tile = e.currentTarget;
     tile.classList.add('sorteando');
     setTimeout(() => tile.classList.remove('sorteando'), 450);
-    setTimeout(() => siguientePalabra(true), 200);
-    cerrarModalControl();
+    if (esVentanaPanel && CANAL) {
+      CANAL.postMessage({ tipo: 'cmdAleatoria' });
+    } else {
+      setTimeout(() => siguientePalabra(true), 200);
+      cerrarModalControl();
+    }
   }
 
   // ===== Modal: elegir palabra específica (grid con acordeón) =====
@@ -823,8 +984,12 @@
   }
 
   function seleccionarPalabraDesdeModal(index) {
-    indiceActual = index;
-    actualizarInterfaz();
+    if (esVentanaPanel && CANAL) {
+      CANAL.postMessage({ tipo: 'cmdElegir', data: index });
+    } else {
+      indiceActual = index;
+      actualizarInterfaz();
+    }
     cerrarModalPalabras();
     cerrarModalControl();
   }
@@ -859,6 +1024,8 @@
     imagen.classList.remove('oculta'); // asegura que vuelva a mostrarse en la nueva palabra
 
     resetearBalon();
+    marcarPalabraActivaEnModal();
+    difundirEstado();
   }
 
   // ===== Animación del balón =====
@@ -912,6 +1079,7 @@
         mensajePenal().textContent = '¡GOLAZO!';
         puntaje += 10;
         document.getElementById('hudScore').innerText = `Puntaje: ${puntaje}`;
+        difundirEstado();
       } else {
         const destino = destinoFallo();
         moverBalon(destino.top, destino.left);
@@ -987,6 +1155,7 @@
     puntajesGuardados.sort((a, b) => b.puntos - a.puntos);
     localStorage.setItem('spellingScores', JSON.stringify(puntajesGuardados));
     mostrarPuntajes(puntajesGuardados);
+    if (CANAL) CANAL.postMessage({ tipo: 'puntajesActualizados', data: puntajesGuardados });
   }
 
   function cargarPuntajesGuardados() {
@@ -1028,21 +1197,27 @@
     localStorage.removeItem('spellingScores');
     mostrarPuntajes([]);
     cerrarModal();
+    if (CANAL) CANAL.postMessage({ tipo: 'puntajesActualizados', data: [] });
   }
 
   function resetearTurno() {
+    if (esVentanaPanel && CANAL) {
+      CANAL.postMessage({ tipo: 'cmdSiguienteEstudiante' });
+      return;
+    }
     puntaje = 0;
     document.getElementById('hudScore').innerText = 'Puntaje: 0';
     document.getElementById('nombreEstudiante').value = '';
     sincronizarNombreVisible();
     siguientePalabra();
     cerrarModalControl();
+    difundirEstado();
   }
 
   // ===== Registro del Service Worker: guarda todo en el dispositivo
   // la primera vez que se abre con internet, para que luego funcione
   // sin conexión. =====
-  if ('serviceWorker' in navigator) {
+  if ('serviceWorker' in navigator && !esVentanaPanel) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('service-worker.js')
         .then(() => console.log('[App] Listo para funcionar sin conexión.'))

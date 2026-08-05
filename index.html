@@ -1532,14 +1532,14 @@
   // ===== Tour guiado =====
   let pasoTourActual = 0;
   const pasosTour = [
-    { selector: '.btn-control', modal: null, titulo: 'Panel de control', texto: 'al abrir este panel podras: elegir una palabra especifica o una aleatoria, guardar puntajes, ajustes y más.' },
+    { selector: '.btn-control', modal: null, titulo: 'Panel de control', texto: 'Al abrir este panel podras: elegir una palabra especifica o una aleatoria, guardar puntajes, ajustes y más.' },
     { selector: '.input-cancha', modal: null, titulo: 'Escribir la palabra', texto: 'Escribe aquí la palabra letra por letra.' },
-    { selector: '#btnTirar', modal: null, titulo: 'Tirar a gol', texto: 'Al confirmar, el balón anima el resultado: gol si acierta, fuera si falla.' },
+    { selector: '#btnTirar', modal: null, titulo: 'Tirar a gol', texto: 'Al confirmar, se visualiza una animación: gol si acierta, fuera si falla.' },
     { selector: '.fila-audio', modal: null, titulo: 'Escuchar la palabra', texto: 'Estos botones permiten reproducir la palabra, su definición o un ejemplo en inglés. Si falta el audio o se pierde la conexión a internet, una voz de respaldo lo lee.' },
     { selector: '#tilesSeleccionPalabra', modal: 'control', titulo: 'Elegir la palabra', texto: 'Sortea al azar o búscala manualmente. El juego evita repetir la misma palabra para un mismo estudiante.' },
     { selector: '.btn-ventana-aparte', modal: 'control', titulo: 'Ventana aparte', texto: 'Si accedes a esta pagina en computador puedes abrir este panel en otra ventana: ideal para pantalla dividida o doble monitor.' },
-    { selector: '#filaExportarResultados', modal: 'control', titulo: 'Resultados', texto: '(WOP) Exporta el ranking a CSV o imprímelo directamente desde aquí.' },
-    { selector: '#separadorAjustes', modal: 'control', titulo: 'Ajustes', texto: '(WOP) Ajusta el tamaño del texto, activa el alto contraste y controla la velocidad del audio.' }
+    { selector: '#filaExportarResultados', modal: 'control', titulo: 'Resultados', texto: 'Con estos botones puedes exportar el ranking a CSV o imprimir el rankin en un PDF.' },
+    { selector: '#separadorAjustes', modal: 'control', titulo: 'Ajustes', texto: 'De ser necesario puedes ajustar el tamaño del texto, activa el alto contraste y controla la velocidad del audio.' }
   ];
 
   function iniciarTour() {

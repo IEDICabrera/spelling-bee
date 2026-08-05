@@ -615,16 +615,20 @@
     body.alto-contraste .caja-modal{ border:3px solid #000; }
     body.alto-contraste .modal-cabecera{ background:#000; border-bottom:2px solid #FFD700; }
 
-    /* ===== Overlay del tour guiado ===== */
+    /* ===== Overlay del tour guiado =====
+       El overlay NO tiene fondo oscuro propio (solo bloquea clics fuera
+       del recorrido). El único oscurecimiento viene del box-shadow del
+       "foco" (.tour-resaltado), que además dibuja un hueco transparente
+       justo sobre el elemento real para que se vea con claridad. */
     .tour-overlay{
-      position: fixed; inset:0; z-index: 300;
-      background: rgba(5,10,15,0.72);
+      position: fixed; inset:0; z-index: 299;
+      background: transparent;
     }
     .tour-overlay.hidden{ display:none; }
     .tour-resaltado{
       position: fixed; z-index: 301;
       border-radius: 12px;
-      box-shadow: 0 0 0 4px var(--gold), 0 0 0 9999px rgba(5,10,15,0.72);
+      box-shadow: 0 0 0 4px var(--gold), 0 0 0 9999px rgba(5,10,15,0.55);
       pointer-events: none;
       transition: top 0.25s ease, left 0.25s ease, width 0.25s ease, height 0.25s ease;
     }
@@ -650,10 +654,11 @@
     .btn-tour-saltar{ background:#f3f4f6; color:#6b7280; }
 
     .btn-tour-iniciar{
-      width:100%; padding:11px; border-radius:10px; margin-bottom:14px;
-      font-weight:800; font-size:13.5px; cursor:pointer;
-      border:none; background: linear-gradient(135deg,#FFD700,#C9A400); color:var(--navy);
+      width:100%; padding:10px; border-radius:10px; margin-top:16px;
+      font-weight:700; font-size:12.5px; cursor:pointer;
+      border:1px dashed #cbd5e1; background:transparent; color:#64748b;
     }
+    .btn-tour-iniciar:hover{ background:#f8fafc; color:#334155; border-color:#94a3b8; }
 </style>
 </head>
 <body>
@@ -685,7 +690,7 @@
 
   <!-- Panel de escritura: todo integrado en la misma tarjeta -->
   <div class="panel-escritura">
-    <input type="text" id="inputSpelling" class="input-cancha" placeholder="Escribe aquí..." autocomplete="off">
+    <input type="text" id="inputSpelling" class="input-cancha" placeholder="Escribe aquí..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault(); verificar();}">
     <button class="btn-gol" id="btnTirar" onclick="verificar()">¡Tirar a Gol! ⚽</button>
     <button class="btn-reintentar" id="btnReintentar" onclick="reintentar()">🔁 Reintentar esta palabra</button>
   </div>
@@ -718,7 +723,6 @@
     <div class="modal-cuerpo">
 
       <button type="button" class="btn-ventana-aparte" onclick="abrirVentanaControl()">🗔 Abrir panel en otra ventana</button>
-      <button type="button" class="btn-tour-iniciar" onclick="iniciarTour()">✨ Ver recorrido guiado</button>
 
       <div class="separador-seccion">Selección de palabra</div>
       <div class="tiles-accion" id="tilesSeleccionPalabra">
@@ -771,6 +775,8 @@
         <button type="button" class="btn-segmento" data-velocidad="0.75" onclick="ajustarVelocidadAudio(0.75)">0.75x</button>
         <button type="button" class="btn-segmento" data-velocidad="1" onclick="ajustarVelocidadAudio(1)">1x</button>
       </div>
+
+      <button type="button" class="btn-tour-iniciar" onclick="iniciarTour()">❓ ¿Cómo funciona? Ver recorrido guiado</button>
 
     </div>
   </div>
@@ -1564,13 +1570,23 @@
   function posicionarPasoTour() {
     const paso = pasosTour[pasoTourActual];
     const el = document.querySelector(paso.selector);
-    const rect = el ? el.getBoundingClientRect() : null;
+    const rectInicial = el ? el.getBoundingClientRect() : null;
 
     // Si el elemento no existe o está oculto (p. ej. "ventana aparte" en celular), saltamos el paso
-    if (!el || (rect.width === 0 && rect.height === 0)) {
+    if (!el || (rectInicial.width === 0 && rectInicial.height === 0)) {
       avanzarTour();
       return;
     }
+
+    // El panel de control tiene su propio scroll interno (.modal-cuerpo).
+    // Si el elemento a explicar no está a la vista, lo desplazamos primero
+    // y esperamos a que el scroll termine antes de medir su posición real.
+    el.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+    requestAnimationFrame(() => requestAnimationFrame(() => dibujarResaltadoTour(el, paso)));
+  }
+
+  function dibujarResaltadoTour(el, paso) {
+    const rect = el.getBoundingClientRect();
 
     const resaltado = document.getElementById('tourResaltado');
     resaltado.style.top = (rect.top - 6) + 'px';
@@ -1592,7 +1608,7 @@
       const alturaTarjeta = tarjeta.offsetHeight;
       tarjeta.style.top = Math.max(12, rect.top - alturaTarjeta - 14) + 'px';
     } else {
-      tarjeta.style.top = (rect.bottom + 14) + 'px';
+      tarjeta.style.top = Math.min(rect.bottom + 14, window.innerHeight - tarjeta.offsetHeight - 12) + 'px';
     }
 
     let left = rect.left;

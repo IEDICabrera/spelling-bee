@@ -539,7 +539,6 @@
     <span class="lapiz">✏️</span>
   </div>
 
-  <!-- Zona única: arco + HUD superpuesto (marcador + bandera del país) -->
   <div class="zona-penal">
     <img id="hudBandera" src="imagenes/placeholder.png" alt="Imagen" class="imagen-ventana" onerror="this.src='https://placehold.co/400x300/163f1e/fff?text=%E2%9A%BD'">
 
@@ -556,7 +555,6 @@
     <div class="balon-animado" id="balonAnimado"></div>
   </div>
 
-  <!-- Panel de escritura: todo integrado en la misma tarjeta -->
   <div class="panel-escritura">
     <input type="text" id="inputSpelling" class="input-cancha" placeholder="Escribe aquí..." autocomplete="off">
     <button class="btn-gol" id="btnTirar" onclick="verificar()">¡Tirar a Gol! ⚽</button>
@@ -578,9 +576,9 @@
 
 <footer>
   <p>&copy; 2026 Institución Educativa Integrada de Cabrera. Todos los derechos reservados.</p>
+  <p>Aplicativo desarrollado por el Area de Lengua Extranjera ingles en colaboracion con el Area de Tecnología e Informática</p>
 </footer>
 
-<!-- Modal: Panel de Control del profesor -->
 <div id="modalControl" class="overlay-modal hidden">
   <div class="caja-modal mediana">
     <div class="aviso-modo-panel">🖥️ Ventana de control — sincronizada con la pantalla de juego</div>
@@ -619,7 +617,6 @@
   </div>
 </div>
 
-<!-- Modal: elegir palabra específica (grid con glassmorphism) -->
 <div id="modalPalabras" class="overlay-modal hidden">
   <div class="caja-modal grande">
     <div class="modal-cabecera">
@@ -635,12 +632,11 @@
   </div>
 </div>
 
-<!-- Modal de Confirmación para borrar puntajes -->
 <div id="modalConfirmacion" class="overlay-modal hidden">
   <div class="caja-modal chica">
     <div class="text-5xl mb-4">⚠️</div>
     <h3 class="text-3xl font-bold mb-2 text-gray-800" style="font-family:'Teko',sans-serif;">¡Atención!</h3>
-    <p class="text-lg text-gray-600 mb-6 font-bold">¿Seguro que quieres borrar todos los puntajes? Esta acción no se puede deshacer.</p>
+    <p class="text-lg text-gray-600 mb-6 font-bold">¿Seguro que quieres borrar todos los puntajes? <i>Esta acción no se puede deshacer.</i></p>
     <div class="flex justify-center gap-4">
       <button class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg text-lg transition active:scale-95" onclick="cerrarModal()">Cancelar</button>
       <button class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg shadow-md text-lg transition active:scale-95" onclick="confirmarLimpieza()">Sí, borrar</button>

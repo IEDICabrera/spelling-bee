@@ -19,6 +19,7 @@
       --gold-deep:#C9A400;
       --gol-color:#3fae4d;
       --fallo-color:#d64541;
+      --escala-texto: 1; /* 1 = normal, 1.2 = grande, 1.4 = muy grande */
     }
     * { font-family: 'Rubik', Arial, sans-serif; box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
@@ -52,12 +53,12 @@
 
     footer{
       width: 100%;
-      max-width: 430px;
       text-align: center;
       color: rgba(255,255,255,0.55);
       font-size: 0.7rem;
       margin-top: 10px;
       padding: 0 8px;
+      transition: transform 0.3s ease;
     }
 
     /* Botón de control del profesor: esquina opuesta a la imagen, no se encima */
@@ -82,7 +83,7 @@
       display:flex; align-items:center; justify-content:center; gap:6px;
       background: #0d2a12;
       color: #cbd5e1;
-      font-size: 0.85rem;
+      font-size: calc(0.85rem * var(--escala-texto));
       font-weight: 600;
       padding: 7px 10px 7px 54px;
       text-align:center;
@@ -186,13 +187,13 @@
       font-family: 'Teko', sans-serif;
     }
     .hud-texto{ display:flex; flex-direction:column; line-height:1; align-items:flex-end; }
-    .hud-texto .num-palabra{ font-size: 1.1rem; color:#e2e8f0; letter-spacing:1px; text-shadow:0 2px 4px rgba(0,0,0,0.8); }
-    .hud-texto .score{ font-size: 1.6rem; color: var(--gold); font-weight:700; text-shadow:0 2px 4px rgba(0,0,0,0.8); }
+    .hud-texto .num-palabra{ font-size: calc(1.1rem * var(--escala-texto)); color:#e2e8f0; letter-spacing:1px; text-shadow:0 2px 4px rgba(0,0,0,0.8); }
+    .hud-texto .score{ font-size: calc(1.6rem * var(--escala-texto)); color: var(--gold); font-weight:700; text-shadow:0 2px 4px rgba(0,0,0,0.8); }
 
     .mensaje-penal{
       position:absolute; top:44%; left:0; right:0;
       text-align:center;
-      font-weight:800; font-size:1.5rem; letter-spacing:2px;
+      font-weight:800; font-size:calc(1.5rem * var(--escala-texto)); letter-spacing:2px;
       opacity:0;
       transition:opacity 0.3s ease 0.35s;
       text-shadow:0 2px 6px rgba(0,0,0,0.7);
@@ -207,7 +208,7 @@
     }
     .input-cancha {
       padding: 16px 14px;
-      font-size: 30px;
+      font-size: calc(30px * var(--escala-texto));
       border: 3px solid var(--navy);
       border-radius: 12px;
       text-align: center;
@@ -228,7 +229,7 @@
       color: var(--navy);
       border: none;
       padding: 15px;
-      font-size: 20px;
+      font-size: calc(20px * var(--escala-texto));
       border-radius: 12px;
       cursor: pointer;
       width: 100%;
@@ -364,6 +365,26 @@
         border-radius: 0;
         box-shadow: -14px 0 40px rgba(0,0,0,0.35);
         animation: entrar-cajon 0.25s ease;
+      }
+
+      /* Desplaza la tarjeta de juego proporcionalmente al ancho del
+         cajón abierto, para que el espacio libre quede repartido
+         y la tarjeta no quede escondida detrás del panel */
+      body.panel-control-abierto .tarjeta-juego,
+      body.panel-control-abierto footer{
+        transform: translateX(-190px);
+      }
+      body.panel-palabras-abierto .tarjeta-juego,
+      body.panel-palabras-abierto footer{
+        transform: translateX(-210px);
+      }
+      /* Si la ventana es angosta, no desplazamos más de lo razonable
+         para evitar que la tarjeta se salga de la pantalla */
+      @media (max-width: 1200px){
+        body.panel-control-abierto .tarjeta-juego,
+        body.panel-control-abierto footer{ transform: translateX(-150px); }
+        body.panel-palabras-abierto .tarjeta-juego,
+        body.panel-palabras-abierto footer{ transform: translateX(-160px); }
       }
     }
 
@@ -527,6 +548,112 @@
       background:#f9fafb; border-radius:10px; border:1px solid #e5e7eb;
       padding: 8px;
     }
+
+    /* Fila de acciones sobre los resultados: CSV / imprimir */
+    .fila-resultados{
+      display:flex; gap:8px; margin-top:8px;
+    }
+    .btn-secundario{
+      flex:1; padding:9px 6px; border-radius:8px;
+      font-weight:700; font-size:12.5px; cursor:pointer;
+      border: 2px solid #d1d5db; background:#fff; color:#374151;
+    }
+    .btn-secundario:hover{ background:#f3f4f6; border-color:#9ca3af; }
+
+    /* ===== Ajustes de accesibilidad ===== */
+    .fila-segmentada{
+      display:flex; gap:6px; margin-bottom: 12px;
+    }
+    .btn-segmento{
+      flex:1; padding:9px 4px; border-radius:8px;
+      font-weight:700; font-size:12.5px; cursor:pointer;
+      border: 2px solid #d1d5db; background:#fff; color:#374151;
+      transition: background 0.12s ease, border-color 0.12s ease;
+    }
+    .btn-segmento:hover{ border-color: var(--navy); }
+    .btn-segmento.activo{ background: var(--navy); border-color: var(--navy); color:#fff; }
+
+    .fila-switch{
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 4px 2px 14px;
+    }
+    .fila-switch span{ font-weight:700; font-size:0.85rem; color:#1f2937; }
+    .switch-toggle{
+      position:relative; width:46px; height:26px; border-radius:999px;
+      background:#d1d5db; border:none; cursor:pointer; flex-shrink:0;
+      transition: background 0.15s ease;
+    }
+    .switch-toggle::after{
+      content:''; position:absolute; top:3px; left:3px;
+      width:20px; height:20px; border-radius:50%; background:#fff;
+      box-shadow:0 1px 3px rgba(0,0,0,0.4);
+      transition: transform 0.15s ease;
+    }
+    .switch-toggle.activo{ background: var(--gol-color); }
+    .switch-toggle.activo::after{ transform: translateX(20px); }
+
+    /* ===== Modo alto contraste ===== */
+    body.alto-contraste .tarjeta-juego{
+      background:#000; border-color:#FFD700; box-shadow:none;
+    }
+    body.alto-contraste .barra-estudiante{ background:#000; border-bottom:2px solid #FFD700; }
+    body.alto-contraste .barra-estudiante .nombre{ color:#FFD700; }
+    body.alto-contraste .panel-escritura{ background:#000; }
+    body.alto-contraste .input-cancha{
+      background:#000; color:#fff; border-color:#FFD700; border-width:4px;
+    }
+    body.alto-contraste .btn-gol{
+      background:#FFD700; color:#000; box-shadow:0 6px 0 #8a7000; border:3px solid #000;
+    }
+    body.alto-contraste .fila-audio{ background:#000; }
+    body.alto-contraste .btn-audio{
+      background:#000; color:#FFD700; border-color:#FFD700; border-width:2px;
+    }
+    body.alto-contraste .zona-penal::after{ background: rgba(0,0,0,0.82); }
+    body.alto-contraste .hud-texto .score,
+    body.alto-contraste .hud-texto .num-palabra{ color:#FFD700; text-shadow:none; }
+    body.alto-contraste .caja-modal{ border:3px solid #000; }
+    body.alto-contraste .modal-cabecera{ background:#000; border-bottom:2px solid #FFD700; }
+
+    /* ===== Overlay del tour guiado ===== */
+    .tour-overlay{
+      position: fixed; inset:0; z-index: 300;
+      background: rgba(5,10,15,0.72);
+    }
+    .tour-overlay.hidden{ display:none; }
+    .tour-resaltado{
+      position: fixed; z-index: 301;
+      border-radius: 12px;
+      box-shadow: 0 0 0 4px var(--gold), 0 0 0 9999px rgba(5,10,15,0.72);
+      pointer-events: none;
+      transition: top 0.25s ease, left 0.25s ease, width 0.25s ease, height 0.25s ease;
+    }
+    .tour-tarjeta{
+      position: fixed; z-index: 302;
+      max-width: 300px;
+      background: #fff;
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+      transition: top 0.25s ease, left 0.25s ease;
+    }
+    .tour-tarjeta h4{ margin:0 0 6px; color:var(--navy); font-size:1rem; font-weight:800; }
+    .tour-tarjeta p{ margin:0 0 12px; color:#374151; font-size:0.85rem; line-height:1.4; }
+    .tour-pie{ display:flex; justify-content:space-between; align-items:center; gap:8px; }
+    .tour-paso-num{ font-size:0.7rem; color:#9ca3af; font-weight:700; }
+    .tour-botones{ display:flex; gap:6px; }
+    .tour-botones button{
+      padding:7px 12px; border-radius:8px; border:none; cursor:pointer;
+      font-weight:700; font-size:0.78rem;
+    }
+    .btn-tour-siguiente{ background: var(--navy); color:#fff; }
+    .btn-tour-saltar{ background:#f3f4f6; color:#6b7280; }
+
+    .btn-tour-iniciar{
+      width:100%; padding:11px; border-radius:10px; margin-bottom:14px;
+      font-weight:800; font-size:13.5px; cursor:pointer;
+      border:none; background: linear-gradient(135deg,#FFD700,#C9A400); color:var(--navy);
+    }
 </style>
 </head>
 <body>
@@ -539,6 +666,7 @@
     <span class="lapiz">✏️</span>
   </div>
 
+  <!-- Zona única: arco + HUD superpuesto (marcador + bandera del país) -->
   <div class="zona-penal">
     <img id="hudBandera" src="imagenes/placeholder.png" alt="Imagen" class="imagen-ventana" onerror="this.src='https://placehold.co/400x300/163f1e/fff?text=%E2%9A%BD'">
 
@@ -555,6 +683,7 @@
     <div class="balon-animado" id="balonAnimado"></div>
   </div>
 
+  <!-- Panel de escritura: todo integrado en la misma tarjeta -->
   <div class="panel-escritura">
     <input type="text" id="inputSpelling" class="input-cancha" placeholder="Escribe aquí..." autocomplete="off">
     <button class="btn-gol" id="btnTirar" onclick="verificar()">¡Tirar a Gol! ⚽</button>
@@ -576,9 +705,9 @@
 
 <footer>
   <p>&copy; 2026 Institución Educativa Integrada de Cabrera. Todos los derechos reservados.</p>
-  <p>Aplicativo desarrollado por el Area de Lengua Extranjera ingles en colaboracion con el Area de Tecnología e Informática</p>
 </footer>
 
+<!-- Modal: Panel de Control del profesor -->
 <div id="modalControl" class="overlay-modal hidden">
   <div class="caja-modal mediana">
     <div class="aviso-modo-panel">🖥️ Ventana de control — sincronizada con la pantalla de juego</div>
@@ -589,9 +718,10 @@
     <div class="modal-cuerpo">
 
       <button type="button" class="btn-ventana-aparte" onclick="abrirVentanaControl()">🗔 Abrir panel en otra ventana</button>
+      <button type="button" class="btn-tour-iniciar" onclick="iniciarTour()">✨ Ver recorrido guiado</button>
 
       <div class="separador-seccion">Selección de palabra</div>
-      <div class="tiles-accion">
+      <div class="tiles-accion" id="tilesSeleccionPalabra">
         <div class="tile-accion" onclick="accionAleatoria(event)">
           <span class="emoji">🎲</span>
           <div class="titulo">Random</div>
@@ -611,12 +741,42 @@
 
       <div class="separador-seccion">Mejores puntajes</div>
       <div id="listaPuntajes"></div>
+      <div class="fila-resultados" id="filaExportarResultados">
+        <button type="button" class="btn-secundario" onclick="exportarCSV()">📄 Exportar CSV</button>
+        <button type="button" class="btn-secundario" onclick="imprimirRanking()">🖨️ Imprimir ranking</button>
+      </div>
       <button class="btn-modal btn-borrar" style="margin-top:10px;" onclick="limpiarPuntajes()">🗑️ Borrar todos los puntajes</button>
+
+      <div class="separador-seccion" id="separadorAjustes">Ajustes</div>
+
+      <div class="fila-switch">
+        <span>Tamaño del texto</span>
+      </div>
+      <div class="fila-segmentada" id="filaTamanoTexto">
+        <button type="button" class="btn-segmento" data-escala="1" onclick="ajustarTamanoTexto(1)">Normal</button>
+        <button type="button" class="btn-segmento" data-escala="1.2" onclick="ajustarTamanoTexto(1.2)">Grande</button>
+        <button type="button" class="btn-segmento" data-escala="1.4" onclick="ajustarTamanoTexto(1.4)">Muy grande</button>
+      </div>
+
+      <div class="fila-switch">
+        <span>Alto contraste</span>
+        <button type="button" class="switch-toggle" id="switchContraste" onclick="alternarAltoContraste()"></button>
+      </div>
+
+      <div class="fila-switch">
+        <span>Velocidad del audio</span>
+      </div>
+      <div class="fila-segmentada" id="filaVelocidadAudio">
+        <button type="button" class="btn-segmento" data-velocidad="0.5" onclick="ajustarVelocidadAudio(0.5)">0.5x</button>
+        <button type="button" class="btn-segmento" data-velocidad="0.75" onclick="ajustarVelocidadAudio(0.75)">0.75x</button>
+        <button type="button" class="btn-segmento" data-velocidad="1" onclick="ajustarVelocidadAudio(1)">1x</button>
+      </div>
 
     </div>
   </div>
 </div>
 
+<!-- Modal: elegir palabra específica (grid con glassmorphism) -->
 <div id="modalPalabras" class="overlay-modal hidden">
   <div class="caja-modal grande">
     <div class="modal-cabecera">
@@ -632,14 +792,30 @@
   </div>
 </div>
 
+<!-- Modal de Confirmación para borrar puntajes -->
 <div id="modalConfirmacion" class="overlay-modal hidden">
   <div class="caja-modal chica">
     <div class="text-5xl mb-4">⚠️</div>
     <h3 class="text-3xl font-bold mb-2 text-gray-800" style="font-family:'Teko',sans-serif;">¡Atención!</h3>
-    <p class="text-lg text-gray-600 mb-6 font-bold">¿Seguro que quieres borrar todos los puntajes? <i>Esta acción no se puede deshacer.</i></p>
+    <p class="text-lg text-gray-600 mb-6 font-bold">¿Seguro que quieres borrar todos los puntajes? Esta acción no se puede deshacer.</p>
     <div class="flex justify-center gap-4">
       <button class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg text-lg transition active:scale-95" onclick="cerrarModal()">Cancelar</button>
       <button class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg shadow-md text-lg transition active:scale-95" onclick="confirmarLimpieza()">Sí, borrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tour guiado: overlay + marco que resalta el elemento + tarjeta explicativa -->
+<div id="tourOverlay" class="tour-overlay hidden"></div>
+<div id="tourResaltado" class="tour-resaltado hidden"></div>
+<div id="tourTarjeta" class="tour-tarjeta hidden">
+  <h4 id="tourTitulo"></h4>
+  <p id="tourTexto"></p>
+  <div class="tour-pie">
+    <span class="tour-paso-num" id="tourPasoNum"></span>
+    <div class="tour-botones">
+      <button type="button" class="btn-tour-saltar" onclick="cerrarTour()">Saltar</button>
+      <button type="button" class="btn-tour-siguiente" id="btnTourSiguiente" onclick="avanzarTour()">Siguiente</button>
     </div>
   </div>
 </div>
@@ -802,6 +978,13 @@
   let puntaje = 0;
   let bloqueado = false;
 
+  // Evita que un mismo estudiante reciba la misma palabra dos veces en su turno.
+  // Se reinicia al pasar de estudiante o cuando ya se usaron todas las palabras.
+  let palabrasUsadasEstudiante = new Set();
+
+  // Ajustes de accesibilidad/audio (persisten entre sesiones vía localStorage)
+  let velocidadAudio = 1;
+
   const POS_REPOSO = { top: 88, left: 50 };
   const CANAL = ('BroadcastChannel' in window) ? new BroadcastChannel('spelling-bee-sync') : null;
   const esVentanaPanel = new URLSearchParams(window.location.search).get('panel') === 'control';
@@ -812,6 +995,7 @@
   window.onload = () => {
     construirGridPalabras();
     cargarPuntajesGuardados();
+    cargarAjustesGuardados();
 
     if (esVentanaPanel) {
       // Esta pestaña/ventana es SOLO el panel de control: no juega,
@@ -858,7 +1042,7 @@
     // La ventana principal (juego) escucha comandos que vienen del panel remoto
     if (msg.tipo === 'pedirEstado') { difundirEstado(); mostrarPuntajes(JSON.parse(localStorage.getItem('spellingScores')) || []); }
     if (msg.tipo === 'cmdAleatoria') siguientePalabra(true);
-    if (msg.tipo === 'cmdElegir') { indiceActual = msg.data; actualizarInterfaz(); }
+    if (msg.tipo === 'cmdElegir') { indiceActual = msg.data; palabrasUsadasEstudiante.add(indiceActual); actualizarInterfaz(); }
     if (msg.tipo === 'cmdNombre') { document.getElementById('nombreEstudiante').value = msg.data; sincronizarNombreVisible(); }
     if (msg.tipo === 'cmdGuardar') guardarPuntaje();
     if (msg.tipo === 'cmdSiguienteEstudiante') resetearTurno();
@@ -871,9 +1055,51 @@
     cerrarModalControl();
   }
 
+  // ===== Ajustes: tamaño de texto, alto contraste, velocidad de audio =====
+  function cargarAjustesGuardados() {
+    const escalaGuardada = parseFloat(localStorage.getItem('sb_escalaTexto')) || 1;
+    const contrasteGuardado = localStorage.getItem('sb_altoContraste') === '1';
+    const velocidadGuardada = parseFloat(localStorage.getItem('sb_velocidadAudio')) || 1;
+
+    document.documentElement.style.setProperty('--escala-texto', escalaGuardada);
+    document.body.classList.toggle('alto-contraste', contrasteGuardado);
+    document.getElementById('switchContraste').classList.toggle('activo', contrasteGuardado);
+    velocidadAudio = velocidadGuardada;
+
+    marcarSegmentoActivo('filaTamanoTexto', 'escala', escalaGuardada);
+    marcarSegmentoActivo('filaVelocidadAudio', 'velocidad', velocidadGuardada);
+  }
+
+  function marcarSegmentoActivo(idContenedor, atributo, valor) {
+    const contenedor = document.getElementById(idContenedor);
+    if (!contenedor) return;
+    contenedor.querySelectorAll('.btn-segmento').forEach(btn => {
+      btn.classList.toggle('activo', parseFloat(btn.dataset[atributo]) === valor);
+    });
+  }
+
+  function ajustarTamanoTexto(valor) {
+    document.documentElement.style.setProperty('--escala-texto', valor);
+    localStorage.setItem('sb_escalaTexto', valor);
+    marcarSegmentoActivo('filaTamanoTexto', 'escala', valor);
+  }
+
+  function alternarAltoContraste() {
+    const activo = document.body.classList.toggle('alto-contraste');
+    document.getElementById('switchContraste').classList.toggle('activo', activo);
+    localStorage.setItem('sb_altoContraste', activo ? '1' : '0');
+  }
+
+  function ajustarVelocidadAudio(valor) {
+    velocidadAudio = valor;
+    localStorage.setItem('sb_velocidadAudio', valor);
+    marcarSegmentoActivo('filaVelocidadAudio', 'velocidad', valor);
+  }
+
   // ===== Panel de control (modal) =====
   function abrirModalControl() {
     document.getElementById('modalControl').classList.remove('hidden');
+    if (!esVentanaPanel) document.body.classList.add('panel-control-abierto');
     setTimeout(() => document.getElementById('nombreEstudiante').focus(), 50);
   }
 
@@ -884,6 +1110,7 @@
   }
   function cerrarModalControl() {
     document.getElementById('modalControl').classList.add('hidden');
+    document.body.classList.remove('panel-control-abierto');
   }
   function accionAleatoria(e) {
     // Pequeño efecto de "sorteo" para diferenciar claramente de "elegir palabra"
@@ -950,6 +1177,7 @@
 
   function abrirModalPalabras() {
     document.getElementById('modalPalabras').classList.remove('hidden');
+    document.body.classList.add('panel-palabras-abierto');
     document.getElementById('buscadorPalabras').value = '';
     filtrarModalPalabras();
     marcarPalabraActivaEnModal();
@@ -958,6 +1186,7 @@
 
   function cerrarModalPalabras() {
     document.getElementById('modalPalabras').classList.add('hidden');
+    document.body.classList.remove('panel-palabras-abierto');
   }
 
   function filtrarModalPalabras() {
@@ -984,6 +1213,7 @@
       CANAL.postMessage({ tipo: 'cmdElegir', data: index });
     } else {
       indiceActual = index;
+      palabrasUsadasEstudiante.add(indiceActual);
       actualizarInterfaz();
     }
     cerrarModalPalabras();
@@ -991,7 +1221,17 @@
   }
 
   function siguientePalabra(conEfecto) {
-    indiceActual = Math.floor(Math.random() * baseDeDatos.length);
+    // Si el estudiante actual ya vio todas las palabras disponibles,
+    // se reinicia el registro para poder seguir sorteando.
+    if (palabrasUsadasEstudiante.size >= baseDeDatos.length) {
+      palabrasUsadasEstudiante.clear();
+    }
+    let candidato;
+    do {
+      candidato = Math.floor(Math.random() * baseDeDatos.length);
+    } while (palabrasUsadasEstudiante.has(candidato));
+    indiceActual = candidato;
+    palabrasUsadasEstudiante.add(indiceActual);
     actualizarInterfaz(conEfecto);
   }
 
@@ -1132,6 +1372,7 @@
     }
 
     let reproductor = new Audio(rutaFichero);
+    reproductor.playbackRate = velocidadAudio;
     reproductor.play().catch(function () {
       hablarConRobot(textoDeRespaldo);
     });
@@ -1140,6 +1381,7 @@
   function hablarConRobot(texto) {
     let v = new SpeechSynthesisUtterance(texto);
     v.lang = 'en-US';
+    v.rate = velocidadAudio;
     window.speechSynthesis.speak(v);
   }
 
@@ -1157,6 +1399,76 @@
   function cargarPuntajesGuardados() {
     let puntajesGuardados = JSON.parse(localStorage.getItem('spellingScores')) || [];
     mostrarPuntajes(puntajesGuardados);
+  }
+
+  function exportarCSV() {
+    const puntajesGuardados = JSON.parse(localStorage.getItem('spellingScores')) || [];
+    if (puntajesGuardados.length === 0) {
+      alert('Todavía no hay puntajes guardados para exportar.');
+      return;
+    }
+    // Punto y coma como separador (más compatible con Excel en español)
+    // y BOM al inicio para que tildes y ñ se vean bien al abrirlo.
+    let filas = ['Posición;Nombre;Puntos'];
+    puntajesGuardados.forEach((item, index) => {
+      const nombreSeguro = String(item.nombre).replace(/"/g, '""');
+      filas.push(`${index + 1};"${nombreSeguro}";${item.puntos}`);
+    });
+    const csv = '\uFEFF' + filas.join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const enlace = document.createElement('a');
+    const fecha = new Date().toISOString().slice(0, 10);
+    enlace.href = url;
+    enlace.download = `ranking_spelling_bee_${fecha}.csv`;
+    document.body.appendChild(enlace);
+    enlace.click();
+    document.body.removeChild(enlace);
+    URL.revokeObjectURL(url);
+  }
+
+  function imprimirRanking() {
+    const puntajesGuardados = JSON.parse(localStorage.getItem('spellingScores')) || [];
+    if (puntajesGuardados.length === 0) {
+      alert('Todavía no hay puntajes guardados para imprimir.');
+      return;
+    }
+    const fecha = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+    const medallas = ['🥇', '🥈', '🥉'];
+    const filasHTML = puntajesGuardados.map((item, index) => `
+      <tr>
+        <td>${medallas[index] || (index + 1)}</td>
+        <td>${item.nombre}</td>
+        <td>${item.puntos}</td>
+      </tr>`).join('');
+
+    const ventanaImpresion = window.open('', 'ImprimirRanking', 'width=700,height=900');
+    ventanaImpresion.document.write(`
+      <!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+      <title>Ranking - Spelling Bee World Cup 2026</title>
+      <style>
+        body{ font-family: Arial, sans-serif; padding: 30px; color:#111; }
+        h1{ color:#0a1f44; margin-bottom:2px; }
+        p.fecha{ color:#555; margin-top:0; margin-bottom:24px; }
+        table{ width:100%; border-collapse: collapse; }
+        th, td{ padding: 10px 12px; border-bottom: 1px solid #ddd; text-align:left; font-size:15px; }
+        th{ background:#0a1f44; color:#fff; }
+        tr:nth-child(even){ background:#f7f7f7; }
+      </style>
+      </head><body>
+        <h1>🏆 Ranking - Spelling Bee World Cup 2026</h1>
+        <p class="fecha">Institución Educativa Integrada de Cabrera — ${fecha}</p>
+        <table>
+          <thead><tr><th>Puesto</th><th>Nombre</th><th>Puntos</th></tr></thead>
+          <tbody>${filasHTML}</tbody>
+        </table>
+      </body></html>
+    `);
+    ventanaImpresion.document.close();
+    setTimeout(() => {
+      ventanaImpresion.focus();
+      ventanaImpresion.print();
+    }, 300);
   }
 
   function mostrarPuntajes(arreglo) {
@@ -1202,12 +1514,104 @@
       return;
     }
     puntaje = 0;
+    palabrasUsadasEstudiante.clear();
     document.getElementById('hudScore').innerText = 'Puntaje: 0';
     document.getElementById('nombreEstudiante').value = '';
     sincronizarNombreVisible();
     siguientePalabra();
     cerrarModalControl();
     difundirEstado();
+  }
+
+  // ===== Tour guiado =====
+  let pasoTourActual = 0;
+  const pasosTour = [
+    { selector: '.btn-control', modal: null, titulo: 'Panel de control', texto: 'Aquí el profesor abre el panel: elegir palabra, guardar puntajes, ajustes y más.' },
+    { selector: '.input-cancha', modal: null, titulo: 'Escribir la palabra', texto: 'El estudiante escribe aquí la palabra que escuchó, letra por letra.' },
+    { selector: '#btnTirar', modal: null, titulo: 'Tirar a gol', texto: 'Al confirmar, el balón anima el resultado: gol si acierta, fuera si falla.' },
+    { selector: '.fila-audio', modal: null, titulo: 'Escuchar la palabra', texto: 'Reproduce la palabra, su definición o un ejemplo en inglés. Si falta el audio, una voz de respaldo lo lee.' },
+    { selector: '#tilesSeleccionPalabra', modal: 'control', titulo: 'Elegir la palabra', texto: 'Sortea al azar o búscala manualmente. El juego evita repetir la misma palabra para un mismo estudiante.' },
+    { selector: '.btn-ventana-aparte', modal: 'control', titulo: 'Ventana aparte', texto: 'En computador puedes abrir este panel en otra ventana: ideal para pantalla dividida o doble monitor.' },
+    { selector: '#filaExportarResultados', modal: 'control', titulo: 'Resultados', texto: 'Exporta el ranking a CSV o imprímelo directamente desde aquí.' },
+    { selector: '#separadorAjustes', modal: 'control', titulo: 'Ajustes', texto: 'Ajusta el tamaño del texto, activa el alto contraste y controla la velocidad del audio.' }
+  ];
+
+  function iniciarTour() {
+    pasoTourActual = 0;
+    cerrarModalControl();
+    document.getElementById('tourOverlay').classList.remove('hidden');
+    setTimeout(mostrarPasoTour, 320);
+  }
+
+  function mostrarPasoTour() {
+    const paso = pasosTour[pasoTourActual];
+    if (!paso) { cerrarTour(); return; }
+
+    const yaAbiertoControl = !document.getElementById('modalControl').classList.contains('hidden');
+    if (paso.modal === 'control' && !yaAbiertoControl) {
+      abrirModalControl();
+      setTimeout(posicionarPasoTour, 320);
+      return;
+    }
+    if (paso.modal === null && yaAbiertoControl) {
+      cerrarModalControl();
+      setTimeout(posicionarPasoTour, 320);
+      return;
+    }
+    posicionarPasoTour();
+  }
+
+  function posicionarPasoTour() {
+    const paso = pasosTour[pasoTourActual];
+    const el = document.querySelector(paso.selector);
+    const rect = el ? el.getBoundingClientRect() : null;
+
+    // Si el elemento no existe o está oculto (p. ej. "ventana aparte" en celular), saltamos el paso
+    if (!el || (rect.width === 0 && rect.height === 0)) {
+      avanzarTour();
+      return;
+    }
+
+    const resaltado = document.getElementById('tourResaltado');
+    resaltado.style.top = (rect.top - 6) + 'px';
+    resaltado.style.left = (rect.left - 6) + 'px';
+    resaltado.style.width = (rect.width + 12) + 'px';
+    resaltado.style.height = (rect.height + 12) + 'px';
+    resaltado.classList.remove('hidden');
+
+    const tarjeta = document.getElementById('tourTarjeta');
+    document.getElementById('tourTitulo').textContent = paso.titulo;
+    document.getElementById('tourTexto').textContent = paso.texto;
+    document.getElementById('tourPasoNum').textContent = `Paso ${pasoTourActual + 1} de ${pasosTour.length}`;
+    document.getElementById('btnTourSiguiente').textContent = (pasoTourActual === pasosTour.length - 1) ? 'Finalizar' : 'Siguiente';
+    tarjeta.classList.remove('hidden');
+
+    const espacioAbajo = window.innerHeight - rect.bottom;
+    const vaArriba = espacioAbajo <= 180;
+    if (vaArriba) {
+      const alturaTarjeta = tarjeta.offsetHeight;
+      tarjeta.style.top = Math.max(12, rect.top - alturaTarjeta - 14) + 'px';
+    } else {
+      tarjeta.style.top = (rect.bottom + 14) + 'px';
+    }
+
+    let left = rect.left;
+    const maxLeft = window.innerWidth - tarjeta.offsetWidth - 16;
+    if (left > maxLeft) left = maxLeft;
+    if (left < 16) left = 16;
+    tarjeta.style.left = left + 'px';
+  }
+
+  function avanzarTour() {
+    pasoTourActual++;
+    if (pasoTourActual >= pasosTour.length) { cerrarTour(); return; }
+    mostrarPasoTour();
+  }
+
+  function cerrarTour() {
+    document.getElementById('tourOverlay').classList.add('hidden');
+    document.getElementById('tourResaltado').classList.add('hidden');
+    document.getElementById('tourTarjeta').classList.add('hidden');
   }
 
   // ===== Registro del Service Worker: guarda todo en el dispositivo

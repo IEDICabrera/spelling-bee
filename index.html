@@ -189,6 +189,34 @@
     .hud-texto{ display:flex; flex-direction:column; line-height:1; align-items:flex-end; }
     .hud-texto .num-palabra{ font-size: calc(1.1rem * var(--escala-texto)); color:#e2e8f0; letter-spacing:1px; text-shadow:0 2px 4px rgba(0,0,0,0.8); }
     .hud-texto .score{ font-size: calc(1.6rem * var(--escala-texto)); color: var(--gold); font-weight:700; text-shadow:0 2px 4px rgba(0,0,0,0.8); }
+    .hud-texto .hud-racha{
+      display:none;
+      font-size: calc(0.9rem * var(--escala-texto));
+      color:#ff9d2f;
+      font-weight:800;
+      text-shadow:0 2px 4px rgba(0,0,0,0.8);
+      margin-top:1px;
+    }
+    .hud-racha.mostrar{ display:inline-block; }
+    .hud-racha.animar{ animation: pulso-badge 0.4s ease; }
+
+    .hud-record{
+      display:none;
+      position:absolute; top:8px; left:12px; z-index:6;
+      background: rgba(255,215,0,0.96); color:var(--navy);
+      font-size: calc(0.72rem * var(--escala-texto)); font-weight:800;
+      padding:4px 9px; border-radius:999px;
+      box-shadow:0 3px 8px rgba(0,0,0,0.45);
+      white-space:nowrap;
+    }
+    .hud-record.mostrar{ display:block; }
+    .hud-record.animar{ animation: pulso-badge 0.4s ease; }
+
+    @keyframes pulso-badge{
+      0%{ transform: scale(0.6); opacity:0; }
+      60%{ transform: scale(1.15); }
+      100%{ transform: scale(1); opacity:1; }
+    }
 
     .mensaje-penal{
       position:absolute; top:44%; left:0; right:0;
@@ -592,6 +620,30 @@
     .switch-toggle.activo{ background: var(--gol-color); }
     .switch-toggle.activo::after{ transform: translateX(20px); }
 
+    /* ===== Configuración de puntaje y rachas ===== */
+    .grid-config-puntaje{
+      display:grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; margin-bottom: 8px;
+    }
+    .campo-config-puntaje{ display:flex; flex-direction:column; gap:4px; }
+    .campo-config-puntaje label{
+      font-size:0.7rem; font-weight:700; color:#6b7280;
+      line-height:1.2;
+    }
+    .campo-config-puntaje input[type="number"]{
+      padding:8px 10px; border:2px solid #d1d5db; border-radius:8px;
+      font-size:14px; font-weight:800; text-align:center; color:#1f2937;
+      outline:none;
+    }
+    .campo-config-puntaje input[type="number"]:focus{ border-color: var(--navy); }
+    .campo-config-puntaje input[type="number"]:disabled{
+      background:#f3f4f6; color:#9ca3af; cursor:not-allowed;
+    }
+    .ayuda-config-puntaje{
+      font-size:0.72rem; color:#9ca3af; line-height:1.4;
+      margin: 0 0 16px;
+    }
+
     /* ===== Modo alto contraste ===== */
     body.alto-contraste .tarjeta-juego{
       background:#000; border-color:#FFD700; box-shadow:none;
@@ -612,6 +664,8 @@
     body.alto-contraste .zona-penal::after{ background: rgba(0,0,0,0.82); }
     body.alto-contraste .hud-texto .score,
     body.alto-contraste .hud-texto .num-palabra{ color:#FFD700; text-shadow:none; }
+    body.alto-contraste .hud-texto .hud-racha{ color:#fff; text-shadow:none; }
+    body.alto-contraste .hud-record{ background:#FFD700; color:#000; }
     body.alto-contraste .caja-modal{ border:3px solid #000; }
     body.alto-contraste .modal-cabecera{ background:#000; border-bottom:2px solid #FFD700; }
 
@@ -675,10 +729,13 @@
   <div class="zona-penal">
     <img id="hudBandera" src="imagenes/placeholder.png" alt="Imagen" class="imagen-ventana" onerror="this.src='https://placehold.co/400x300/163f1e/fff?text=%E2%9A%BD'">
 
+    <div class="hud-record" id="hudRecord">🏆 ¡Nuevo récord!</div>
+
     <div class="hud">
       <div class="hud-texto">
         <span class="num-palabra" id="hudNumPalabra">Palabra 1/130</span>
         <span class="score" id="hudScore">Puntaje: 0</span>
+        <span class="hud-racha" id="hudRacha">🔥 Racha x0</span>
       </div>
     </div>
 
@@ -750,6 +807,33 @@
         <button type="button" class="btn-secundario" onclick="imprimirRanking()">🖨️ Imprimir ranking</button>
       </div>
       <button class="btn-modal btn-borrar" style="margin-top:10px;" onclick="limpiarPuntajes()">🗑️ Borrar todos los puntajes</button>
+
+      <div class="separador-seccion" id="separadorPuntaje">Puntaje y rachas 🔥</div>
+
+      <div class="fila-switch">
+        <span>Sistema de rachas</span>
+        <button type="button" class="switch-toggle activo" id="switchRacha" onclick="alternarRacha()"></button>
+      </div>
+
+      <div class="grid-config-puntaje">
+        <div class="campo-config-puntaje">
+          <label for="inputPuntosCorrecta">Puntos por acierto</label>
+          <input type="number" id="inputPuntosCorrecta" min="1" max="50" value="5" onchange="guardarConfigPuntaje()">
+        </div>
+        <div class="campo-config-puntaje">
+          <label for="inputPenalizacionFallo">Penalización por fallo</label>
+          <input type="number" id="inputPenalizacionFallo" min="0" max="30" value="2" onchange="guardarConfigPuntaje()">
+        </div>
+        <div class="campo-config-puntaje">
+          <label for="inputRachaCada">Racha cada (aciertos)</label>
+          <input type="number" id="inputRachaCada" min="2" max="20" value="5" onchange="guardarConfigPuntaje()">
+        </div>
+        <div class="campo-config-puntaje">
+          <label for="inputRachaBonus">Bono por racha</label>
+          <input type="number" id="inputRachaBonus" min="1" max="20" value="1" onchange="guardarConfigPuntaje()">
+        </div>
+      </div>
+      <p class="ayuda-config-puntaje">Ej: con los valores por defecto, cada 5 aciertos seguidos suman +1 punto extra por respuesta (5, 5, 5, 5, 6, 6...). Un fallo reinicia la racha.</p>
 
       <div class="separador-seccion" id="separadorAjustes">Ajustes</div>
 
@@ -991,6 +1075,19 @@
   // Ajustes de accesibilidad/audio (persisten entre sesiones vía localStorage)
   let velocidadAudio = 1;
 
+  // ===== Sistema de puntaje con rachas =====
+  // rachaActual: aciertos consecutivos del estudiante en su turno actual.
+  // Cada "rachaCada" aciertos seguidos, se suma "rachaBonus" puntos extra
+  // por respuesta correcta (5,5,5,5,6,6... con los valores por defecto).
+  let rachaActual = 0;
+  let configPuntaje = {
+    puntosCorrecta: 5,
+    penalizacionFallo: 2,
+    rachaActivada: true,
+    rachaCada: 5,
+    rachaBonus: 1
+  };
+
   const POS_REPOSO = { top: 88, left: 50 };
   const CANAL = ('BroadcastChannel' in window) ? new BroadcastChannel('spelling-bee-sync') : null;
   const esVentanaPanel = new URLSearchParams(window.location.search).get('panel') === 'control';
@@ -1002,6 +1099,8 @@
     construirGridPalabras();
     cargarPuntajesGuardados();
     cargarAjustesGuardados();
+    cargarConfigPuntaje();
+    actualizarBadgeRecord();
 
     if (esVentanaPanel) {
       // Esta pestaña/ventana es SOLO el panel de control: no juega,
@@ -1100,6 +1199,99 @@
     velocidadAudio = valor;
     localStorage.setItem('sb_velocidadAudio', valor);
     marcarSegmentoActivo('filaVelocidadAudio', 'velocidad', valor);
+  }
+
+  // ===== Configuración de puntaje y rachas =====
+  function cargarConfigPuntaje() {
+    configPuntaje.puntosCorrecta = parseInt(localStorage.getItem('sb_puntosCorrecta')) || 5;
+    const penalGuardada = parseInt(localStorage.getItem('sb_penalizacionFallo'));
+    configPuntaje.penalizacionFallo = isNaN(penalGuardada) ? 2 : penalGuardada;
+    configPuntaje.rachaActivada = localStorage.getItem('sb_rachaActivada') !== '0'; // activa por defecto
+    configPuntaje.rachaCada = parseInt(localStorage.getItem('sb_rachaCada')) || 5;
+    configPuntaje.rachaBonus = parseInt(localStorage.getItem('sb_rachaBonus')) || 1;
+
+    document.getElementById('inputPuntosCorrecta').value = configPuntaje.puntosCorrecta;
+    document.getElementById('inputPenalizacionFallo').value = configPuntaje.penalizacionFallo;
+    document.getElementById('inputRachaCada').value = configPuntaje.rachaCada;
+    document.getElementById('inputRachaBonus').value = configPuntaje.rachaBonus;
+    document.getElementById('switchRacha').classList.toggle('activo', configPuntaje.rachaActivada);
+    actualizarDisponibilidadCamposRacha();
+  }
+
+  function guardarConfigPuntaje() {
+    const puntos = Math.max(1, parseInt(document.getElementById('inputPuntosCorrecta').value) || 5);
+    const penal = Math.max(0, parseInt(document.getElementById('inputPenalizacionFallo').value) || 0);
+    const cada = Math.max(2, parseInt(document.getElementById('inputRachaCada').value) || 5);
+    const bono = Math.max(1, parseInt(document.getElementById('inputRachaBonus').value) || 1);
+
+    configPuntaje.puntosCorrecta = puntos;
+    configPuntaje.penalizacionFallo = penal;
+    configPuntaje.rachaCada = cada;
+    configPuntaje.rachaBonus = bono;
+
+    // Refleja de vuelta cualquier valor corregido (ej: si escribieron 0 o texto)
+    document.getElementById('inputPuntosCorrecta').value = puntos;
+    document.getElementById('inputPenalizacionFallo').value = penal;
+    document.getElementById('inputRachaCada').value = cada;
+    document.getElementById('inputRachaBonus').value = bono;
+
+    localStorage.setItem('sb_puntosCorrecta', puntos);
+    localStorage.setItem('sb_penalizacionFallo', penal);
+    localStorage.setItem('sb_rachaCada', cada);
+    localStorage.setItem('sb_rachaBonus', bono);
+  }
+
+  function alternarRacha() {
+    configPuntaje.rachaActivada = !configPuntaje.rachaActivada;
+    document.getElementById('switchRacha').classList.toggle('activo', configPuntaje.rachaActivada);
+    localStorage.setItem('sb_rachaActivada', configPuntaje.rachaActivada ? '1' : '0');
+    actualizarDisponibilidadCamposRacha();
+    actualizarBadgeRacha();
+  }
+
+  function actualizarDisponibilidadCamposRacha() {
+    const activa = configPuntaje.rachaActivada;
+    document.getElementById('inputRachaCada').disabled = !activa;
+    document.getElementById('inputRachaBonus').disabled = !activa;
+  }
+
+  // Puntos que se ganarían con la racha actual (antes de sumar el acierto nuevo)
+  function calcularBonoRacha(racha) {
+    if (!configPuntaje.rachaActivada) return 0;
+    return Math.floor(racha / configPuntaje.rachaCada) * configPuntaje.rachaBonus;
+  }
+
+  function actualizarBadgeRacha() {
+    const badge = document.getElementById('hudRacha');
+    if (configPuntaje.rachaActivada && rachaActual >= 2) {
+      badge.textContent = `🔥 Racha x${rachaActual}`;
+      badge.classList.add('mostrar');
+      badge.classList.remove('animar');
+      void badge.offsetWidth;
+      badge.classList.add('animar');
+    } else {
+      badge.classList.remove('mostrar');
+    }
+  }
+
+  function obtenerRecordSesion() {
+    const guardados = JSON.parse(localStorage.getItem('spellingScores')) || [];
+    if (guardados.length === 0) return null;
+    return Math.max(...guardados.map(g => g.puntos));
+  }
+
+  function actualizarBadgeRecord() {
+    const record = obtenerRecordSesion();
+    const badge = document.getElementById('hudRecord');
+    const debeMostrarse = record !== null && puntaje > record;
+    if (debeMostrarse && !badge.classList.contains('mostrar')) {
+      badge.classList.add('mostrar');
+      badge.classList.remove('animar');
+      void badge.offsetWidth;
+      badge.classList.add('animar');
+    } else if (!debeMostrarse) {
+      badge.classList.remove('mostrar');
+    }
   }
 
   // ===== Panel de control (modal) =====
@@ -1318,16 +1510,32 @@
         moverBalon(30, 50);
         balon().classList.add('gol');
         mensajePenal().classList.add('gol');
-        mensajePenal().textContent = '¡GOLAZO!';
-        puntaje += 10;
+
+        rachaActual++;
+        const bono = calcularBonoRacha(rachaActual);
+        const puntosGanados = configPuntaje.puntosCorrecta + bono;
+        puntaje += puntosGanados;
+
+        mensajePenal().textContent = `¡GOLAZO! +${puntosGanados}`;
         document.getElementById('hudScore').innerText = `Puntaje: ${puntaje}`;
+        actualizarBadgeRacha();
+        actualizarBadgeRecord();
         difundirEstado();
       } else {
         const destino = destinoFallo();
         moverBalon(destino.top, destino.left);
         balon().classList.add('fallo');
         mensajePenal().classList.add('fallo');
-        mensajePenal().textContent = '¡FUERA!';
+
+        rachaActual = 0;
+        const penal = configPuntaje.penalizacionFallo;
+        puntaje = Math.max(0, puntaje - penal);
+
+        mensajePenal().textContent = penal > 0 ? `¡FUERA! -${penal}` : '¡FUERA!';
+        document.getElementById('hudScore').innerText = `Puntaje: ${puntaje}`;
+        actualizarBadgeRacha();
+        actualizarBadgeRecord();
+        difundirEstado();
       }
     });
 
@@ -1393,12 +1601,17 @@
 
   // ===== Puntajes =====
   function guardarPuntaje() {
+    if (esVentanaPanel && CANAL) {
+      CANAL.postMessage({ tipo: 'cmdGuardar' });
+      return;
+    }
     const nombre = document.getElementById('nombreEstudiante').value.trim() || 'Jugador desconocido';
     let puntajesGuardados = JSON.parse(localStorage.getItem('spellingScores')) || [];
     puntajesGuardados.push({ nombre: nombre, puntos: puntaje });
     puntajesGuardados.sort((a, b) => b.puntos - a.puntos);
     localStorage.setItem('spellingScores', JSON.stringify(puntajesGuardados));
     mostrarPuntajes(puntajesGuardados);
+    actualizarBadgeRecord();
     if (CANAL) CANAL.postMessage({ tipo: 'puntajesActualizados', data: puntajesGuardados });
   }
 
@@ -1511,6 +1724,7 @@
     localStorage.removeItem('spellingScores');
     mostrarPuntajes([]);
     cerrarModal();
+    actualizarBadgeRecord();
     if (CANAL) CANAL.postMessage({ tipo: 'puntajesActualizados', data: [] });
   }
 
@@ -1520,26 +1734,29 @@
       return;
     }
     puntaje = 0;
+    rachaActual = 0;
     palabrasUsadasEstudiante.clear();
     document.getElementById('hudScore').innerText = 'Puntaje: 0';
     document.getElementById('nombreEstudiante').value = '';
     sincronizarNombreVisible();
     siguientePalabra();
     cerrarModalControl();
+    actualizarBadgeRacha();
+    actualizarBadgeRecord();
     difundirEstado();
   }
 
   // ===== Tour guiado =====
   let pasoTourActual = 0;
   const pasosTour = [
-    { selector: '.btn-control', modal: null, titulo: 'Panel de control', texto: 'Al abrir este panel podras: elegir una palabra especifica o una aleatoria, guardar puntajes, ajustes y más.' },
-    { selector: '.input-cancha', modal: null, titulo: 'Escribir la palabra', texto: 'Escribe aquí la palabra letra por letra.' },
-    { selector: '#btnTirar', modal: null, titulo: 'Tirar a gol', texto: 'Al confirmar, se visualiza una animación: gol si acierta, fuera si falla.' },
-    { selector: '.fila-audio', modal: null, titulo: 'Escuchar la palabra', texto: 'Estos botones permiten reproducir la palabra, su definición o un ejemplo en inglés. Si falta el audio o se pierde la conexión a internet, una voz de respaldo lo lee.' },
+    { selector: '.btn-control', modal: null, titulo: 'Panel de control', texto: 'Aquí el profesor abre el panel: elegir palabra, guardar puntajes, ajustes y más.' },
+    { selector: '.input-cancha', modal: null, titulo: 'Escribir la palabra', texto: 'El estudiante escribe aquí la palabra que escuchó, letra por letra.' },
+    { selector: '#btnTirar', modal: null, titulo: 'Tirar a gol', texto: 'Al confirmar, el balón anima el resultado: gol si acierta, fuera si falla.' },
+    { selector: '.fila-audio', modal: null, titulo: 'Escuchar la palabra', texto: 'Reproduce la palabra, su definición o un ejemplo en inglés. Si falta el audio, una voz de respaldo lo lee.' },
     { selector: '#tilesSeleccionPalabra', modal: 'control', titulo: 'Elegir la palabra', texto: 'Sortea al azar o búscala manualmente. El juego evita repetir la misma palabra para un mismo estudiante.' },
-    { selector: '.btn-ventana-aparte', modal: 'control', titulo: 'Ventana aparte', texto: 'Si accedes a esta pagina en computador puedes abrir este panel en otra ventana: ideal para pantalla dividida o doble monitor.' },
-    { selector: '#filaExportarResultados', modal: 'control', titulo: 'Resultados', texto: 'Con estos botones puedes exportar el ranking a CSV o imprimir el rankin en un PDF.' },
-    { selector: '#separadorAjustes', modal: 'control', titulo: 'Ajustes', texto: 'De ser necesario puedes ajustar el tamaño del texto, activa el alto contraste y controla la velocidad del audio.' }
+    { selector: '.btn-ventana-aparte', modal: 'control', titulo: 'Ventana aparte', texto: 'En computador puedes abrir este panel en otra ventana: ideal para pantalla dividida o doble monitor.' },
+    { selector: '#filaExportarResultados', modal: 'control', titulo: 'Resultados', texto: 'Exporta el ranking a CSV o imprímelo directamente desde aquí.' },
+    { selector: '#separadorAjustes', modal: 'control', titulo: 'Ajustes', texto: 'Ajusta el tamaño del texto, activa el alto contraste y controla la velocidad del audio.' }
   ];
 
   function iniciarTour() {

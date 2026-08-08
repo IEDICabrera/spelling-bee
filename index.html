@@ -579,6 +579,551 @@
 
     /* Fila de acciones sobre los resultados: CSV / imprimir */
     .fila-resultados{
+      display:flex; gap:8px; margin-      position: relative;
+    }
+
+    /* ===== Tarjeta única de juego (mobile-first, sin scroll) ===== */
+    .tarjeta-juego{
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 430px;
+      background: rgba(255,255,255,0.98);
+      border-radius: 22px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.65);
+      border: 4px solid var(--navy);
+      overflow: hidden;
+      transition: transform 0.3s ease;
+    }
+
+    footer{
+      width: 100%;
+      text-align: center;
+      color: rgba(255,255,255,0.55);
+      font-size: 0.7rem;
+      margin-top: 10px;
+      padding: 0 8px;
+      transition: transform 0.3s ease;
+    }
+
+    /* Botón de control del profesor: esquina opuesta a la imagen, no se encima */
+    .btn-control{
+      position: absolute;
+      top: 10px; left: 10px;
+      z-index: 20;
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: rgba(10,31,68,0.85);
+      backdrop-filter: blur(4px);
+      color: var(--gold);
+      border: 2px solid var(--gold);
+      font-size: 1.05rem;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer;
+    }
+    .btn-control:hover{ background: var(--navy); }
+
+    /* Franja con el nombre del estudiante, visible en la tarjeta principal */
+    .barra-estudiante{
+      display:flex; align-items:center; justify-content:center; gap:6px;
+      background: #0d2a12;
+      color: #cbd5e1;
+      font-size: calc(0.85rem * var(--escala-texto));
+      font-weight: 600;
+      padding: 7px 10px 7px 54px;
+      text-align:center;
+      cursor: pointer;
+    }
+    .barra-estudiante:hover{ background:#123a17; }
+    .barra-estudiante .nombre{ color: var(--gold); font-weight:800; }
+    .barra-estudiante .lapiz{ font-size:0.75rem; opacity:0.6; }
+
+    /* ===== Zona única: arco + HUD superpuesto ===== */
+    .zona-penal {
+      position: relative;
+      height: 220px;
+      overflow: hidden;
+      background: repeating-linear-gradient(90deg, var(--pasto-1) 0px, var(--pasto-1) 34px, var(--pasto-2) 34px, var(--pasto-2) 68px);
+    }
+    .arco-penal {
+      position: absolute;
+      top: 22%;
+      left: 30%;
+      width: 40%;
+      height: 42%;
+      border: 5px solid rgba(255,255,255,0.85);
+      border-bottom: none;
+      background: rgba(255,255,255,0.05);
+      border-radius: 4px 4px 0 0;
+      z-index: 3;
+      opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+    .punto-penal-marca{
+      position:absolute; top:88%; left:50%;
+      transform:translate(-50%,-50%);
+      width:7px; height:7px; border-radius:50%;
+      background:#f4f4ec;
+      z-index: 3;
+      opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+    /* El arco y la marca solo se muestran durante el disparo,
+       cuando la imagen se desvanece (clase .modo-tiro en .zona-penal) */
+    .zona-penal.modo-tiro .arco-penal,
+    .zona-penal.modo-tiro .punto-penal-marca{ opacity: 1; }
+    .balon-animado{
+      position:absolute;
+      top:88%; left:50%;
+      width:26px; height:26px;
+      margin-left:-13px; margin-top:-13px;
+      border-radius:50%;
+      background: radial-gradient(circle at 30% 30%, #ffffff, #f2e8d5 60%);
+      box-shadow: inset -3px -3px 6px rgba(0,0,0,0.3), 0 3px 6px rgba(0,0,0,0.4);
+      transition: top 0.7s cubic-bezier(.2,.9,.3,1.1),
+                  left 0.7s cubic-bezier(.2,.9,.3,1.1),
+                  transform 0.7s cubic-bezier(.2,.9,.3,1.1),
+                  opacity 0.35s ease;
+      transform: scale(1) rotate(0deg);
+      opacity: 0;
+      z-index: 3;
+    }
+    .zona-penal.modo-tiro .balon-animado{ opacity: 1; }
+    .balon-animado::before{
+      content:'';
+      position:absolute; inset:0; border-radius:50%;
+      background:
+        radial-gradient(circle at 50% 50%, transparent 30%, #2b2b2b 31%, transparent 33%),
+        radial-gradient(circle at 20% 60%, transparent 30%, #2b2b2b 31%, transparent 33%),
+        radial-gradient(circle at 80% 60%, transparent 30%, #2b2b2b 31%, transparent 33%);
+      opacity:0.35;
+    }
+    .balon-animado.gol{ transform: scale(0.45) rotate(300deg); }
+    .balon-animado.fallo{ transform: scale(0.65) rotate(220deg); }
+
+    /* Imagen protagonista: cubre buena parte de la ventana del arco,
+       detrás del HUD y del balón. Se atenúa justo cuando se patea. */
+    .imagen-ventana{
+      position:absolute;
+      top:0; left:0; right:0; bottom:0;
+      width:100%; height:100%;
+      object-fit: cover;
+      opacity: 0.9;
+      transition: opacity 0.35s ease;
+      z-index: 1;
+    }
+    .imagen-ventana.oculta{ opacity: 0; }
+    .zona-penal::after{
+      /* leve viñeta oscura para que el HUD y el arco se lean sobre cualquier imagen */
+      content:'';
+      position:absolute; inset:0;
+      background: linear-gradient(180deg, rgba(10,20,10,0.55) 0%, rgba(10,20,10,0.05) 35%, rgba(10,20,10,0.15) 100%);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* HUD: barra translúcida superpuesta sobre la imagen */
+    .hud{
+      position:absolute; top:0; left:0; right:0;
+      z-index: 5;
+      display:flex; align-items:center; justify-content:flex-end;
+      padding: 8px 12px;
+      color: #fff;
+      font-family: 'Teko', sans-serif;
+    }
+    .hud-texto{ display:flex; flex-direction:column; line-height:1; align-items:flex-end; }
+    .hud-texto .num-palabra{ font-size: calc(1.1rem * var(--escala-texto)); color:#e2e8f0; letter-spacing:1px; text-shadow:0 2px 4px rgba(0,0,0,0.8); }
+    .hud-texto .score{ font-size: calc(1.6rem * var(--escala-texto)); color: var(--gold); font-weight:700; text-shadow:0 2px 4px rgba(0,0,0,0.8); }
+    .hud-texto .hud-racha{
+      display:none;
+      font-size: calc(0.9rem * var(--escala-texto));
+      color:#ff9d2f;
+      font-weight:800;
+      text-shadow:0 2px 4px rgba(0,0,0,0.8);
+      margin-top:1px;
+    }
+    .hud-racha.mostrar{ display:inline-block; }
+    .hud-racha.animar{ animation: pulso-badge 0.4s ease; }
+
+    .hud-record{
+      display:none;
+      position:absolute; top:8px; left:12px; z-index:6;
+      background: rgba(255,215,0,0.96); color:var(--navy);
+      font-size: calc(0.72rem * var(--escala-texto)); font-weight:800;
+      padding:4px 9px; border-radius:999px;
+      box-shadow:0 3px 8px rgba(0,0,0,0.45);
+      white-space:nowrap;
+    }
+    .hud-record.mostrar{ display:block; }
+    .hud-record.animar{ animation: pulso-badge 0.4s ease; }
+
+    @keyframes pulso-badge{
+      0%{ transform: scale(0.6); opacity:0; }
+      60%{ transform: scale(1.15); }
+      100%{ transform: scale(1); opacity:1; }
+    }
+
+    .mensaje-penal{
+      position:absolute; top:44%; left:0; right:0;
+      text-align:center;
+      font-weight:800; font-size:calc(1.5rem * var(--escala-texto)); letter-spacing:2px;
+      opacity:0;
+      transition:opacity 0.3s ease 0.35s;
+      text-shadow:0 2px 6px rgba(0,0,0,0.7);
+      z-index:4;
+    }
+    .mensaje-penal.gol{ color: var(--gol-color); opacity:1; }
+    .mensaje-penal.fallo{ color: var(--fallo-color); opacity:1; }
+
+    /* ===== Panel de escritura (grande, para uso del docente) ===== */
+    .panel-escritura{
+      padding: 16px 16px 14px;
+    }
+    .input-cancha {
+      padding: 16px 14px;
+      font-size: calc(30px * var(--escala-texto));
+      border: 3px solid var(--navy);
+      border-radius: 12px;
+      text-align: center;
+      width: 100%;
+      outline: none;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .input-cancha:focus {
+      border-color: var(--gol-color);
+      box-shadow: 0 0 15px rgba(63, 174, 77, 0.4);
+    }
+    .input-cancha:disabled{ opacity: 0.6; }
+
+    .btn-gol {
+      margin-top: 10px;
+      background-color: var(--gold);
+      color: var(--navy);
+      border: none;
+      padding: 15px;
+      font-size: calc(20px * var(--escala-texto));
+      border-radius: 12px;
+      cursor: pointer;
+      width: 100%;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: 0 6px 0 var(--gold-deep);
+      transition: all 0.1s;
+    }
+    .btn-gol:active:not(:disabled) { transform: translateY(6px); box-shadow: none; }
+    .btn-gol:disabled{ opacity:0.5; cursor:not-allowed; }
+
+    .btn-reintentar{
+      display:none;
+      width: 100%;
+      margin-top: 8px;
+      padding: 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 15px;
+      background: transparent;
+      border: 2px solid var(--fallo-color);
+      color: #b23127;
+      cursor: pointer;
+    }
+    .btn-reintentar.mostrar{ display:block; }
+    .btn-reintentar:hover{ background: var(--fallo-color); color:#fff; }
+
+    /* Fila compacta de botones de audio */
+    .fila-audio{
+      display:flex;
+      gap: 8px;
+      padding: 0 16px 16px;
+    }
+    .btn-audio{
+      flex:1;
+      background:#f3f4f6;
+      border: 2px solid #e5e7eb;
+      color:#1f2937;
+      padding: 10px 4px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor:pointer;
+      display:flex; flex-direction:column; align-items:center; gap:2px;
+      transition: background 0.15s ease;
+    }
+    .btn-audio:hover{ background:#e5e7eb; }
+    .btn-audio .icono{ font-size: 1.3rem; }
+
+    /* ===== Modales ===== */
+    .overlay-modal{
+      position: fixed; inset: 0;
+      background: rgba(10, 15, 25, 0.65);
+      backdrop-filter: blur(3px);
+      display:flex; justify-content:center; align-items:center;
+      z-index: 100;
+      padding: 14px;
+    }
+    .overlay-modal.hidden{ display:none; }
+    .caja-modal{
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      width: 100%;
+      max-height: 88vh;
+      display:flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .caja-modal.chica{ max-width: 420px; text-align:center; padding: 26px; }
+    .caja-modal.mediana{ max-width: 420px; }
+    .caja-modal.grande{ max-width: 480px; }
+
+    .modal-cabecera{
+      padding: 16px 20px;
+      background: var(--navy);
+      color: #fff;
+      display:flex;
+      justify-content: space-between;
+      align-items:center;
+      flex-shrink:0;
+    }
+    .modal-cabecera h3{ font-size:1.15rem; font-weight:800; margin:0; }
+    .modal-cerrar{
+      background:none; border:none; color:#fff; font-size:1.4rem;
+      cursor:pointer; line-height:1; opacity:0.8;
+    }
+    .modal-cerrar:hover{ opacity:1; }
+    .modal-cuerpo{ overflow-y:auto; padding: 18px 20px; }
+
+    /* ===== Panel de control como cajón lateral en escritorio =====
+       En vez de tapar el juego con un overlay centrado, en pantallas
+       grandes el panel de control se desliza desde la derecha y deja
+       el juego visible y usable al mismo tiempo. */
+    @media (min-width: 900px){
+      #modalControl.overlay-modal{
+        background: rgba(10,15,25,0.18);
+        backdrop-filter: none;
+        justify-content: flex-end;
+        align-items: stretch;
+        padding: 0;
+        pointer-events: none; /* deja clickear el juego fuera del panel */
+      }
+      #modalControl .caja-modal{
+        pointer-events: auto;
+        max-width: 380px;
+        max-height: 100vh;
+        height: 100%;
+        border-radius: 0;
+        box-shadow: -14px 0 40px rgba(0,0,0,0.35);
+        animation: entrar-cajon 0.25s ease;
+      }
+      @keyframes entrar-cajon{
+        from{ transform: translateX(30px); opacity: 0; }
+        to{ transform: translateX(0); opacity: 1; }
+      }
+      /* El modal de elegir palabra se abre desde dentro del panel,
+         mantenlo como cajón también para no tapar el juego */
+      #modalPalabras.overlay-modal{
+        background: rgba(10,15,25,0.18);
+        backdrop-filter: none;
+        justify-content: flex-end;
+        align-items: stretch;
+        padding: 0;
+        pointer-events: none;
+      }
+      #modalPalabras .caja-modal{
+        pointer-events: auto;
+        max-width: 420px;
+        max-height: 100vh;
+        height: 100%;
+        border-radius: 0;
+        box-shadow: -14px 0 40px rgba(0,0,0,0.35);
+        animation: entrar-cajon 0.25s ease;
+      }
+
+      /* Desplaza la tarjeta de juego proporcionalmente al ancho del
+         cajón abierto, para que el espacio libre quede repartido
+         y la tarjeta no quede escondida detrás del panel */
+      body.panel-control-abierto .tarjeta-juego,
+      body.panel-control-abierto footer{
+        transform: translateX(-190px);
+      }
+      body.panel-palabras-abierto .tarjeta-juego,
+      body.panel-palabras-abierto footer{
+        transform: translateX(-210px);
+      }
+      /* Si la ventana es angosta, no desplazamos más de lo razonable
+         para evitar que la tarjeta se salga de la pantalla */
+      @media (max-width: 1200px){
+        body.panel-control-abierto .tarjeta-juego,
+        body.panel-control-abierto footer{ transform: translateX(-150px); }
+        body.panel-palabras-abierto .tarjeta-juego,
+        body.panel-palabras-abierto footer{ transform: translateX(-160px); }
+      }
+    }
+
+    /* Botón para abrir el panel en una ventana aparte (solo escritorio) */
+    .btn-ventana-aparte{
+      display:none;
+      width:100%; padding: 11px; border-radius: 10px;
+      font-weight: 700; font-size: 13px; border: 2px dashed #94a3b8;
+      background: #f8fafc; color: #334155; cursor:pointer;
+      margin-bottom: 14px;
+      align-items:center; justify-content:center; gap:6px;
+    }
+    @media (min-width: 900px){
+      .btn-ventana-aparte{ display:flex; }
+    }
+    .btn-ventana-aparte:hover{ background:#eef2f7; border-color:#64748b; }
+
+    /* Aviso de modo "solo panel", usado cuando el archivo se abre en
+       la ventana emergente dedicada al control */
+    .aviso-modo-panel{
+      display:none;
+      background:#0a1f44; color:#fff; text-align:center;
+      font-size:0.75rem; font-weight:700; padding:8px 12px;
+    }
+    body.modo-panel-remoto .aviso-modo-panel{ display:block; }
+    body.modo-panel-remoto .tarjeta-juego,
+    body.modo-panel-remoto footer{ display:none; }
+    body.modo-panel-remoto #modalControl{
+      position: static;
+      display:flex !important;
+      background:none;
+      backdrop-filter:none;
+      width:100%; height:100vh;
+      padding: 0;
+    }
+    body.modo-panel-remoto #modalControl .caja-modal{
+      max-width: 480px;
+      width:100%;
+      height:100vh;
+      max-height:100vh;
+      border-radius:0;
+      box-shadow:none;
+      margin: 0 auto;
+    }
+    body.modo-panel-remoto .modal-cerrar{ display:none; }
+
+    /* Tiles de acción principales dentro del panel de control */
+    .tiles-accion{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .tile-accion{
+      background: linear-gradient(160deg, rgba(10,31,68,0.06), rgba(10,31,68,0.02));
+      border: 2px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 18px 10px;
+      text-align:center;
+      cursor:pointer;
+      transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+    }
+    .tile-accion:hover{ border-color: var(--navy); transform: translateY(-2px); }
+    .tile-accion .emoji{ font-size: 2.1rem; display:block; margin-bottom: 6px; }
+    .tile-accion .titulo{ font-weight:800; color:var(--navy); font-size: 0.95rem; }
+    .tile-accion .sub{ font-size: 0.75rem; color:#6b7280; margin-top:2px; }
+    .tile-accion.sorteando{ animation: pulso-sorteo 0.15s ease-in-out 3; }
+    @keyframes pulso-sorteo{
+      0%, 100% { background: linear-gradient(160deg, rgba(10,31,68,0.06), rgba(10,31,68,0.02)); }
+      50% { background: linear-gradient(160deg, rgba(255,215,0,0.35), rgba(255,215,0,0.15)); }
+    }
+    /* Efecto tipo "carrete" en el número de palabra al randomizar */
+    .num-palabra.girando{ animation: girar-numero 0.35s ease-in-out; }
+    @keyframes girar-numero{
+      0% { transform: translateY(0); opacity:1; }
+      40% { transform: translateY(-6px); opacity:0.3; }
+      41% { transform: translateY(6px); }
+      100% { transform: translateY(0); opacity:1; }
+    }
+
+    .separador-seccion{
+      font-size:0.75rem; text-transform:uppercase; letter-spacing:1px;
+      color:#9ca3af; font-weight:700;
+      margin: 18px 0 10px;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 14px;
+    }
+    .separador-seccion:first-child{ border-top:none; padding-top:0; margin-top:0; }
+
+    /* Buscador dentro del modal de selección de palabra */
+    .modal-busqueda input{
+      width:100%; padding:10px 14px;
+      border:2px solid #d1d5db; border-radius:8px;
+      font-size:15px; outline:none;
+      margin-bottom: 14px;
+    }
+    .modal-busqueda input:focus{ border-color: var(--navy); }
+
+    /* Grid de tiles glassmorphism para elegir palabra */
+    .grid-palabras{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .tile-palabra{
+      background: rgba(10,31,68,0.05);
+      backdrop-filter: blur(2px);
+      border: 1px solid rgba(10,31,68,0.12);
+      border-radius: 10px;
+      padding: 10px 8px;
+      text-align:left;
+      cursor:pointer;
+      font-weight:600;
+      font-size: 0.85rem;
+      color:#1f2937;
+      transition: background 0.12s ease, border-color 0.12s ease;
+    }
+    .tile-palabra:hover{ background: rgba(10,31,68,0.12); border-color: var(--navy); }
+    .tile-palabra.activo{ background: var(--navy); border-color: var(--navy); color:#fff; }
+    .tile-palabra .num{ display:block; font-size:0.68rem; color:#9ca3af; font-weight:500; }
+    .tile-palabra.activo .num{ color:#c7d2fe; }
+
+    .acordeon-titulo{
+      width:100%;
+      text-align:left;
+      background: #f3f4f6;
+      border:none;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-weight:700;
+      font-size:0.85rem;
+      color: var(--navy);
+      cursor:pointer;
+      display:flex; justify-content:space-between; align-items:center;
+      margin-bottom: 8px;
+    }
+    .acordeon-cuerpo{ margin-bottom: 14px; }
+    .acordeon-cuerpo.cerrado{ display:none; }
+
+    /* Panel profesor: nombre + guardar + marcador */
+    .input-modal{
+      width:100%; padding: 12px 14px;
+      border: 2px solid #d1d5db; border-radius: 10px;
+      font-size: 16px; outline:none; margin-bottom: 10px;
+    }
+    .input-modal:focus{ border-color: var(--navy); }
+    .btn-modal{
+      width:100%; padding: 13px; border-radius: 10px;
+      font-weight: 800; font-size: 15px; border:none; cursor:pointer;
+      margin-bottom: 10px;
+    }
+    .btn-guardar{ background:#16a34a; color:#fff; }
+    .btn-guardar:hover{ background:#15803d; }
+    .btn-siguiente-est{ background:#eab308; color:#fff; }
+    .btn-siguiente-est:hover{ background:#ca8a04; }
+    .btn-borrar{ background:#ef4444; color:#fff; font-size:13px; }
+    .btn-borrar:hover{ background:#dc2626; }
+
+    #listaPuntajes{
+      max-height: 180px; overflow-y:auto;
+      background:#f9fafb; border-radius:10px; border:1px solid #e5e7eb;
+      padding: 8px;
+    }
+
+    /* Fila de acciones sobre los resultados: CSV / imprimir */
+    .fila-resultados{
       display:flex; gap:8px; margin-top:8px;
     }
     .btn-secundario{
